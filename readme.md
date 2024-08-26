@@ -22,7 +22,19 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
   - [卷积神经网络](#卷积神经网络)
     - [填充和步幅](#填充和步幅)
     - [多通道输入输出](#多通道输入输出)
+  - [Transformer](#transformer)
+  - [注意力机制](#注意力机制)
 - [3D 语义分割](#3d-语义分割)
+- [点云补全](#点云补全)
+  - [AnchorFormer](#anchorformer)
+    - [Anchor Generation](#anchor-generation)
+    - [Anchor Scattering](#anchor-scattering)
+    - [Point Morphing](#point-morphing)
+  - [Point Transformer](#point-transformer)
+    - [Point Transformer Layer](#point-transformer-layer)
+    - [Position Encoding](#position-encoding)
+    - [Point Transformer Block](#point-transformer-block)
+    - [Network Architecture](#network-architecture)
 
 
 # Lidar 运动补偿
@@ -190,9 +202,108 @@ Xavier 初始化可以避免梯度消失和梯度爆炸
 
 1*1 卷积层通常用于调整网络层的通道数量和控制模型复杂性
 
+## Transformer
+
+**encoder - decoder:** 
+
+将输入编码为向量，n 个输入（x1 ... xn）编码为 n 个向量（z1 ... zn），解码器将 n 个向量生成 m 个输出（z1 ... zm）。对于编码器来说，可以看到整个输入一次性编码；解码器只能一个一个生成，输出 y <sub>2</sub> 需要 y <sub>1</sub>，之前的输出也作为当前时刻的输入。
+
+**attention：**
+mask 作用是防止 t 时刻看到以后的东西
+
+## 注意力机制
+权重的分布
+
+<img src="7.png"  width="450" />
+
+**标量注意力：**
+其中每个注意力权重是一个标量值
+
+**向量注意力：**
+其中每个注意力权重是一个向量，在更细粒度的水平上对不同的维度进行加权
+
 #  3D 语义分割
 <!-- ![alt text](image.png)'= -->
 <!-- ![alt text](image-1.png) -->
 
 分类 目标检测 语义分割 区别
 语义分割给每个像素一个 label
+
+# 点云补全
+## AnchorFormer
+传统方法：输入点云 --> 全局特征向量 --> 稠密点云 **池化操作会导致点云细节缺失**
+
+AnchorFormer：输入点云 --> Anchors --> 稀疏点云 --> 稠密点云
+
+1. 通过基于输入部分观察的点特征学习一组 **锚点** 来模拟区域区分
+2. **锚点** 通过估计特定的偏移量来分散到观察到的位置和未观察到的位置并与输入观测的下采样点形成稀疏点云
+3. 为了获得稠密点云，将稀疏点各个位置的规范 2D 网格变形为详细的 3D 结构
+
+<img src="6.png"  width="500" />
+
+锚点可以推断观察到的点的关键模式还能表示缺失的部分，将输入观测的锚点和下采样的点作为稀疏点，再扩充成稠密点
+
+1. 首先对输入点进行下采样，并通过基于 EdgeConv 的头部提取点特征
+2. Transformer 编码器将下采样点的点特征作为输入，并学习在编码器的每个基本块中预测一组坐标，即锚点
+3. 同时，下采样点和锚点的点特征也通过编码器进行细化、
+4. 通过学习特定的偏移量，锚点进一步分散到不同的3D位置
+5. 最后，AnchorFormer 将下采样点和锚点组合为稀疏点
+
+### Anchor Generation
+**特征提取：**
+
+1. 下采样：FPS 最远点 得到 S <sub>0</sub>
+2. 特征提取：EdgeConv 得到 F <sub>0</sub>
+
+**锚点预测：**
+
+双重注意力模块为 transformer 编码器，
+当前的双重注意块预测一组新的锚点，同时细化前一个块的输入点特征
+
+为了表征未观察部分，提出**特征扩展模块**：
+1. 利用输入点特征与相应池化特征向量之间的特征差异进行锚点特征预测。
+2. 利用预测的锚点特征和输入点特征之间的交叉注意进行锚点坐标学习。
+
+流程：
+1. 通过自注意力机制增强特征；F <sub>i-1</sub> --> X <sub>i</sub>
+2. 池化 X <sub>i</sub> 得到 g <sub>i</sub>；X <sub>i</sub> --> g <sub>i</sub>
+3. 对增强点特征 X<sub>i</sub> 与相应池化特征向量 g <sub>i</sub> 之间的特征差进行线性投影，得到锚点特征；X <sub>i</sub><sup>'</sup> = MLP ( g<sub>i</sub> - X<sub>i</sub> )
+4. 增强点特征  X<sub>i</sub>、预测的锚点特征 X <sub>i</sub><sup>'</sup>、输入点 S <sub>i-1</sub> 通过交叉注意力机制得到预测的锚点坐标 a <sub>i</sub>
+
+
+### Anchor Scattering
+锚点 + 输入的下采样点 --> 丰富稀疏点细节
+
+缺失部分的空间没有足够的锚点来促进详细的结构重建，通过学习特定的偏移量 ∆A  来将锚点分散到不同的位置
+
+分散后的锚点 A′ = A + ∆A
+
+稀疏点云 S：分散后的锚点 和 输入残缺点云下采样的点
+
+### Point Morphing
+
+## Point Transformer
+**自注意力网络在 3D 点云处理中的应用**
+
+基于投影的网络：将点云投影到各个平面，没有充分利用点云的稀疏性，影响 3D 中的识别性能和遮挡可能会阻碍准确性
+
+基于体素的网络：计算量大
+
+基于点的网络：设计了直接摄取点云的深度网络结构
+
+基于 Transformer 和 自注意力：3D 点云本质上是具有位置属性的点集，自注意力机制似乎特别适合这种类型的数据，局部应用  selfattention
+
+### Point Transformer Layer
+
+使用的是向量注意力权重
+
+### Position Encoding
+
+δ = θ ( p <sub>i</sub> − p <sub>j</sub> ) 
+
+p <sub>i</sub> 和 p <sub>j</sub> 为三维坐标，编码函数 θ 是一个具有两个线性层和一个 ReLU 非线性的 MLP
+
+### Point Transformer Block
+
+### Network Architecture
+
