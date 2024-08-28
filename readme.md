@@ -35,6 +35,10 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
     - [Position Encoding](#position-encoding)
     - [Point Transformer Block](#point-transformer-block)
     - [Network Architecture](#network-architecture)
+  - [SeedFormer](#seedformer)
+    - [Architecture Overview](#architecture-overview)
+    - [Point Cloud Completion with Patch Seeds](#point-cloud-completion-with-patch-seeds)
+  - [PointAttN](#pointattn)
 
 
 # Lidar 运动补偿
@@ -307,3 +311,53 @@ p <sub>i</sub> 和 p <sub>j</sub> 为三维坐标，编码函数 θ 是一个具
 
 ### Network Architecture
 
+
+## SeedFormer
+贡献：
+1. 引入了一种新的形状表示，即Patch Seed，它不仅从部分输入中捕获一般结构，而且还保留了局部模式的区域信息
+2. 设计了一种新的点生成器，即上采样 Transformer，通过将 Transformer 结构扩展到生成点的基本操作中。
+
+解码阶段由两个主要步骤组成:
+1. 首先从种子生成器中的不完整特征生成完整的形状
+2. 然后以粗到细的方式恢复细粒度的细节
+
+### Architecture Overview
+<img src="8.png"  width="750" />
+
+**Encoder：**
+
+输入点云，使用 point transformer 和 abstraction layers 从残缺点云中提取特征，每往下一层点的数量逐渐减少，得到 patch 特征（F<sub>p</sub>）和 patch 中心坐标（P<sub>p</sub>），表示点云的部分结构
+
+**Seed generator：**
+
+生成一个粗略但完整的点云（seed points）以及每个点的种子特征；
+
+给定提取的 patch 特征 F<sub>p</sub> 和中心坐标 P<sub>p</sub>，使用Upsample Transformer 生成一组新的种子特征 F，F 通过 MLP 生成相应的 seed points。
+
+**Coarse-to-fine generation：**
+
+使用Upsample Transformer将输入点云中的每个点上采样到 r<sub>l</sub> 个点，馈送到第一层的粗略点云 P0 是通过使用最远点采样(FPS)融合种子S和输入点云P来生成的
+
+### Point Cloud Completion with Patch Seeds
+**Patch Seeds:**
+
+由种子坐标 S 和特征 F 组成，每个种子覆盖该点周围的一个小区域
+
+
+## PointAttN
+
+**几何细节感知单元(GDP):**
+
+对 x<sub>i</sub> 进行 knn 得到最近邻点，根据 k 个最近邻点，建立点 x<sub>i</sub> 的特征，**接收域有限**。
+
+使用交叉注意来建立输入点云特征与其下采样点云特征之间的点关系。
+
+KNN 只是提取 x<sub>i</sub> 的最近邻点，而真正与 x<sub>i</sub> 相关的点可能不在最近的点里面
+
+<img src="9.png"  width="650" />
+
+**自特征增强单元(SFA):** 
+
+自注点意力建立输入点云中点之间的关系，允许云中的每个点特征来增强其全局感知能力，来预测完整云
+
+SFA 接收输入 (X, u)，其中 X 是 n × c 的矩阵，u 是上采样比，SFA 的输出是一个大小为 n × uc 的矩阵
