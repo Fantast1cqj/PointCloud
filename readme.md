@@ -161,7 +161,7 @@ $$J = L + s.$$
 
 前向传播的计算图如下，其中正方形表示变量，圆圈表示操作符。左下角表示输入，右上角表示输出
 
-<img src="forward.png"  width="480" />
+<img src="./note_pic/forward.png"  width="480" />
 
 **反向传播**：（backward propagation或backpropagation）指的是计算神经网络参数**梯度**的方法
 
