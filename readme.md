@@ -91,7 +91,7 @@ livox 格式点云每个点都有自己的时间戳，官方驱动时间从启�
 ## 多层感知机 (MLP)
 可以通过在网络中加入一个或多个隐藏层来克服线性模型的限制， 这种架构通常称为多层感知机（multilayer perceptron），通常缩写为 MLP
 
-![alt text](2.png)
+![alt text](note_pic/2.png)
 
 这个多层感知机有4个输入，3个输出，其隐藏层包含5个隐藏单元，输入层不涉及计算，隐藏层和输出层有计算，这个 MLP 的层数为2
 
@@ -124,7 +124,7 @@ livox 格式点云每个点都有自己的时间戳，官方驱动时间从启�
 **过拟合**：训练误差明显低于验证误差时要小心
 
 <!-- ![alt text](3.png) -->
-<img src="3.png"  width="350" />
+<img src="note_pic/3.png"  width="350" />
 
 ### 权重衰减
 **目的**：限制模型复杂度，抑制模型的过拟合，提高模型的泛化性
@@ -133,11 +133,11 @@ livox 格式点云每个点都有自己的时间戳，官方驱动时间从启�
 
 正常的损失函数：
 
-<img src="image-2.png"  width="300" />
+<img src="note_pic/image-2.png"  width="300" />
 
 加入一个额外的损失 **（权重的L2范数）** 来限制权重向量的大小，通过 **正则化常数 λ** 平衡这个新的额外惩罚的损失
 
-<img src="image-3.png"  width="170" />
+<img src="note_pic/image-3.png"  width="170" />
 
 https://blog.csdn.net/zhaohongfei_358/article/details/129625803
 
@@ -179,7 +179,7 @@ Xavier 初始化可以避免梯度消失和梯度爆炸
 ### 参数管理、读写文件
 
 ## 卷积神经网络
-<img src="4.png"  width="350" />
+<img src="note_pic/4.png"  width="350" />
 
 卷积层对输入和卷积核权重进行互相关运算，并在添加标量偏置之后产生输出
 
@@ -200,7 +200,7 @@ Xavier 初始化可以避免梯度消失和梯度爆炸
 
 多通道输入：需要构造一个与输入数据具有相同输入通道数的卷积核：两个通道则需要两个卷积核
 
-<img src="5.png"  width="400" />
+<img src="note_pic/5.png"  width="400" />
 
 多通道输出：
 
@@ -218,7 +218,7 @@ mask 作用是防止 t 时刻看到以后的东西
 ## 注意力机制
 权重的分布
 
-<img src="7.png"  width="450" />
+<img src="note_pic/7.png"  width="450" />
 
 **标量注意力：**
 其中每个注意力权重是一个标量值
@@ -243,7 +243,7 @@ AnchorFormer：输入点云 --> Anchors --> 稀疏点云 --> 稠密点云
 2. **锚点** 通过估计特定的偏移量来分散到观察到的位置和未观察到的位置并与输入观测的下采样点形成稀疏点云
 3. 为了获得稠密点云，将稀疏点各个位置的规范 2D 网格变形为详细的 3D 结构
 
-<img src="6.png"  width="500" />
+<img src="note_pic/6.png"  width="500" />
 
 锚点可以推断观察到的点的关键模式还能表示缺失的部分，将输入观测的锚点和下采样的点作为稀疏点，再扩充成稠密点
 
@@ -322,7 +322,7 @@ p <sub>i</sub> 和 p <sub>j</sub> 为三维坐标，编码函数 θ 是一个具
 2. 然后以粗到细的方式恢复细粒度的细节
 
 ### Architecture Overview
-<img src="8.png"  width="750" />
+<img src="note_pic/8.png"  width="750" />
 
 **Encoder：**
 
@@ -354,7 +354,7 @@ p <sub>i</sub> 和 p <sub>j</sub> 为三维坐标，编码函数 θ 是一个具
 
 KNN 只是提取 x<sub>i</sub> 的最近邻点，而真正与 x<sub>i</sub> 相关的点可能不在最近的点里面
 
-<img src="9.png"  width="650" />
+<img src="note_pic/9.png"  width="650" />
 
 **自特征增强单元(SFA):** 
 
