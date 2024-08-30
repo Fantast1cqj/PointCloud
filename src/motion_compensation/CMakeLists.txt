@@ -15,6 +15,11 @@ find_package(catkin REQUIRED COMPONENTS
   livox_ros_driver
 )
 
+message(STATUS "livox_ros_driver_DIR = ${livox_ros_driver_DIR}")
+message(STATUS "livox_ros_driver_INCLUDE_DIRS = ${livox_ros_driver_INCLUDE_DIRS}")
+message(STATUS "livox_ros_driver_LIBS = ${livox_ros_driver_LIBS}")
+
+
 # set(livox_ros_driver_DIR "/home/taotao/code/vslam/livox_driver_ws/devel/share/livox_ros_driver/cmake/")
 
 catkin_package()
