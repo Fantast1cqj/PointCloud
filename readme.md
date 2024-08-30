@@ -39,6 +39,9 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
     - [Architecture Overview](#architecture-overview)
     - [Point Cloud Completion with Patch Seeds](#point-cloud-completion-with-patch-seeds)
   - [PointAttN](#pointattn)
+  - [WalkFormer](#walkformer)
+    - [Point Walk](#point-walk)
+  - [Zero-shot](#zero-shot)
 
 
 # Lidar 运动补偿
@@ -361,3 +364,29 @@ KNN 只是提取 x<sub>i</sub> 的最近邻点，而真正与 x<sub>i</sub> 相�
 自注点意力建立输入点云中点之间的关系，允许云中的每个点特征来增强其全局感知能力，来预测完整云
 
 SFA 接收输入 (X, u)，其中 X 是 n × c 的矩阵，u 是上采样比，SFA 的输出是一个大小为 n × uc 的矩阵
+
+
+## WalkFormer
+
+基于特征相似度对局部主导点进行采样，并移动点形成缺失的部分
+
+### Point Walk
+**Neighbour Similarity Sampling：**
+
+选取要移动的点，FPS 等下采样方法会导致从具有独特几何信息的外部区域中选择点
+
+邻域相似性采样：先用 FPS 获得相对均匀的质心，得到 i 个质心，通过球查询算法得到每个质心半径内的 K 个点，算一个质心球中找一个点使特征余弦相似度最大，这个点作为一个 walk 起始点
+
+**Point Selector：**
+
+点进行 walk，walk 过程定义为一个序列 ω ，用 π(·) 来指导行走过程中下一个点的选择。
+
+
+## Zero-shot
+对于给定的部分点云Pin，我们首先将其转换为带点云着色的参考图像Iin和3D高斯Gin，将Iin和Gin引入到 Zero-shot 分形补全中,生成完成的点云Pout
+
+<img src="note_pic/10.png"  width="850" />
+
+1. Point Cloud Colorization：
+
+通过 reference viewpoint estimation 获得相机位姿 Vp，Pin 初始化 3DGS 得到 Gin，Gin的中心是固定的，以保持Pin的形状
