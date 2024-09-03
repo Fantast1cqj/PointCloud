@@ -53,6 +53,7 @@ CMAKE_BINARY_DIR = /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
+all: CMakeFiles/kmeans.dir/all
 all: CMakeFiles/pcd_viewer.dir/all
 all: CMakeFiles/txt2pcd.dir/all
 all: CMakeFiles/pcl_recognition_test.dir/all
@@ -65,11 +66,39 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
+clean: CMakeFiles/kmeans.dir/clean
 clean: CMakeFiles/pcd_viewer.dir/clean
 clean: CMakeFiles/txt2pcd.dir/clean
 clean: CMakeFiles/pcl_recognition_test.dir/clean
 
 .PHONY : clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/kmeans.dir
+
+# All Build rule for target.
+CMakeFiles/kmeans.dir/all:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/depend
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles --progress-num=1,2,3 "Built target kmeans"
+.PHONY : CMakeFiles/kmeans.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/kmeans.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles 3
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/kmeans.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles 0
+.PHONY : CMakeFiles/kmeans.dir/rule
+
+# Convenience name for target.
+kmeans: CMakeFiles/kmeans.dir/rule
+
+.PHONY : kmeans
+
+# clean rule for target.
+CMakeFiles/kmeans.dir/clean:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/clean
+.PHONY : CMakeFiles/kmeans.dir/clean
 
 #=============================================================================
 # Target rules for target CMakeFiles/pcd_viewer.dir
@@ -78,7 +107,7 @@ clean: CMakeFiles/pcl_recognition_test.dir/clean
 CMakeFiles/pcd_viewer.dir/all:
 	$(MAKE) -f CMakeFiles/pcd_viewer.dir/build.make CMakeFiles/pcd_viewer.dir/depend
 	$(MAKE) -f CMakeFiles/pcd_viewer.dir/build.make CMakeFiles/pcd_viewer.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles --progress-num=1,2 "Built target pcd_viewer"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles --progress-num=4,5 "Built target pcd_viewer"
 .PHONY : CMakeFiles/pcd_viewer.dir/all
 
 # Build rule for subdir invocation for target.
@@ -105,7 +134,7 @@ CMakeFiles/pcd_viewer.dir/clean:
 CMakeFiles/txt2pcd.dir/all:
 	$(MAKE) -f CMakeFiles/txt2pcd.dir/build.make CMakeFiles/txt2pcd.dir/depend
 	$(MAKE) -f CMakeFiles/txt2pcd.dir/build.make CMakeFiles/txt2pcd.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles --progress-num=5,6 "Built target txt2pcd"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles --progress-num=8,9 "Built target txt2pcd"
 .PHONY : CMakeFiles/txt2pcd.dir/all
 
 # Build rule for subdir invocation for target.
@@ -132,7 +161,7 @@ CMakeFiles/txt2pcd.dir/clean:
 CMakeFiles/pcl_recognition_test.dir/all:
 	$(MAKE) -f CMakeFiles/pcl_recognition_test.dir/build.make CMakeFiles/pcl_recognition_test.dir/depend
 	$(MAKE) -f CMakeFiles/pcl_recognition_test.dir/build.make CMakeFiles/pcl_recognition_test.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles --progress-num=3,4 "Built target pcl_recognition_test"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles --progress-num=6,7 "Built target pcl_recognition_test"
 .PHONY : CMakeFiles/pcl_recognition_test.dir/all
 
 # Build rule for subdir invocation for target.

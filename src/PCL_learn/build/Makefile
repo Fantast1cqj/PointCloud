@@ -111,6 +111,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named kmeans
+
+# Build rule for target.
+kmeans: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 kmeans
+.PHONY : kmeans
+
+# fast build rule for target.
+kmeans/fast:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/build
+.PHONY : kmeans/fast
+
+#=============================================================================
 # Target rules for targets named pcd_viewer
 
 # Build rule for target.
@@ -176,6 +189,60 @@ src/correspondence_grouping.cpp.s:
 	$(MAKE) -f CMakeFiles/pcl_recognition_test.dir/build.make CMakeFiles/pcl_recognition_test.dir/src/correspondence_grouping.cpp.s
 .PHONY : src/correspondence_grouping.cpp.s
 
+src/kmeans.o: src/kmeans.cpp.o
+
+.PHONY : src/kmeans.o
+
+# target to build an object file
+src/kmeans.cpp.o:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/src/kmeans.cpp.o
+.PHONY : src/kmeans.cpp.o
+
+src/kmeans.i: src/kmeans.cpp.i
+
+.PHONY : src/kmeans.i
+
+# target to preprocess a source file
+src/kmeans.cpp.i:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/src/kmeans.cpp.i
+.PHONY : src/kmeans.cpp.i
+
+src/kmeans.s: src/kmeans.cpp.s
+
+.PHONY : src/kmeans.s
+
+# target to generate assembly for a file
+src/kmeans.cpp.s:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/src/kmeans.cpp.s
+.PHONY : src/kmeans.cpp.s
+
+src/kmeans_main.o: src/kmeans_main.cpp.o
+
+.PHONY : src/kmeans_main.o
+
+# target to build an object file
+src/kmeans_main.cpp.o:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/src/kmeans_main.cpp.o
+.PHONY : src/kmeans_main.cpp.o
+
+src/kmeans_main.i: src/kmeans_main.cpp.i
+
+.PHONY : src/kmeans_main.i
+
+# target to preprocess a source file
+src/kmeans_main.cpp.i:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/src/kmeans_main.cpp.i
+.PHONY : src/kmeans_main.cpp.i
+
+src/kmeans_main.s: src/kmeans_main.cpp.s
+
+.PHONY : src/kmeans_main.s
+
+# target to generate assembly for a file
+src/kmeans_main.cpp.s:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/src/kmeans_main.cpp.s
+.PHONY : src/kmeans_main.cpp.s
+
 src/pcd_viewer.o: src/pcd_viewer.cpp.o
 
 .PHONY : src/pcd_viewer.o
@@ -237,6 +304,7 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
+	@echo "... kmeans"
 	@echo "... pcd_viewer"
 	@echo "... rebuild_cache"
 	@echo "... txt2pcd"
@@ -244,6 +312,12 @@ help:
 	@echo "... src/correspondence_grouping.o"
 	@echo "... src/correspondence_grouping.i"
 	@echo "... src/correspondence_grouping.s"
+	@echo "... src/kmeans.o"
+	@echo "... src/kmeans.i"
+	@echo "... src/kmeans.s"
+	@echo "... src/kmeans_main.o"
+	@echo "... src/kmeans_main.i"
+	@echo "... src/kmeans_main.s"
 	@echo "... src/pcd_viewer.o"
 	@echo "... src/pcd_viewer.i"
 	@echo "... src/pcd_viewer.s"
