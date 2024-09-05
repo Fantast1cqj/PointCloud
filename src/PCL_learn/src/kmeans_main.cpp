@@ -1,10 +1,12 @@
 #include "kmeans.h"
 int main(int argc, char** argv)
 {
-    KMeans test(3, 5); // 聚类个数：5
+    KMeans test(200, 20); // 聚类个数：5
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     std::vector<pcl::PointCloud<pcl::PointXYZ>> output_cluster_cloud;
-    pcl::io::loadPCDFile("airplane_0001.pcd",*cloud);
+    pcl::io::loadPCDFile("bed_0003.pcd",*cloud);
+    // pcl::io::loadPCDFile("milk.pcd",*cloud);
+
 
     // std::cout<< "load file ok"<<std::endl;
 
@@ -19,10 +21,10 @@ int main(int argc, char** argv)
     std::cout<< "min pos" << min_index << std::endl;
 
 
-    for (int i = 0; i < 5; ++i)
+    for (int i = 0; i < 20; ++i)
     {
         
-        std::cerr <<"output_cloud[i].points.size()"<< output_cluster_cloud[i].points.size()<<std::endl;
+        std::cerr <<"output_cloud["<<i<<"].points.size()"<< output_cluster_cloud[i].points.size()<<std::endl;
         output_cluster_cloud[i].width = output_cluster_cloud[i].points.size();
         output_cluster_cloud[i].height = 1;
         output_cluster_cloud[i].resize(output_cluster_cloud[i].width * output_cluster_cloud[i].height);

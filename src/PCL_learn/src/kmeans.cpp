@@ -51,11 +51,11 @@ void KMeans::kMeans_process(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud_inp
     int iterations = 0;
     while(iterations < max_iteration_)
     {
-		cluster_cloud[0].clear(); // 要单独clear！！！！！！！！！！
-		cluster_cloud[1].clear();
-		cluster_cloud[2].clear();
-		cluster_cloud[3].clear();
-		cluster_cloud[4].clear();
+		for(uint8_t ii = 0; ii < cluster_num_; ii++)
+		{
+			cluster_cloud[ii].clear();  // 要单独clear！！！！！！！！！！
+		}
+
 
 		for(int i = 0; i < cloud_input -> points.size(); i++)  // 遍历所有点
 		{
