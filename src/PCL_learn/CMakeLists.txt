@@ -24,7 +24,7 @@ add_executable(pcl_recognition_test src/correspondence_grouping.cpp)
 add_executable(txt2pcd src/txt2pcd.cpp)
 # add_executable(pcd_viewer src/pcd_viewer.cpp)
 add_executable(pca pca/pca.cpp)
-add_executable(kmeans src/kmeans.cpp src/kmeans_main.cpp)
+add_executable(kmeans kmeans/kmeans.cpp kmeans/kmeans_main.cpp)
 add_executable(normals src/pcd_viewer.cpp pca/normals.cpp)
 
 

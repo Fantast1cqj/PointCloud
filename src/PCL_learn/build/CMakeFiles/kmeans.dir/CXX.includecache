@@ -6,7 +6,11 @@
 
 #IncludeRegexTransform: 
 
-/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/src/kmeans.h
+/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/kmeans/kmeans.cpp
+kmeans.h
+/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/kmeans/kmeans.h
+
+/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/kmeans/kmeans.h
 iostream
 -
 algorithm
@@ -20,9 +24,9 @@ pcl/common/centroid.h
 pcl/filters/random_sample.h
 -
 
-/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/src/kmeans_main.cpp
+/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/kmeans/kmeans_main.cpp
 kmeans.h
-/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/src/kmeans.h
+/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/kmeans/kmeans.h
 
 /usr/include/eigen3/Eigen/Cholesky
 Core

@@ -57,42 +57,42 @@ include CMakeFiles/kmeans.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/kmeans.dir/flags.make
 
-CMakeFiles/kmeans.dir/src/kmeans.cpp.o: CMakeFiles/kmeans.dir/flags.make
-CMakeFiles/kmeans.dir/src/kmeans.cpp.o: ../src/kmeans.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/kmeans.dir/src/kmeans.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/kmeans.dir/src/kmeans.cpp.o -c /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/src/kmeans.cpp
+CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.o: CMakeFiles/kmeans.dir/flags.make
+CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.o: ../kmeans/kmeans.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.o -c /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/kmeans/kmeans.cpp
 
-CMakeFiles/kmeans.dir/src/kmeans.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/kmeans.dir/src/kmeans.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/src/kmeans.cpp > CMakeFiles/kmeans.dir/src/kmeans.cpp.i
+CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/kmeans/kmeans.cpp > CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.i
 
-CMakeFiles/kmeans.dir/src/kmeans.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/kmeans.dir/src/kmeans.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/src/kmeans.cpp -o CMakeFiles/kmeans.dir/src/kmeans.cpp.s
+CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/kmeans/kmeans.cpp -o CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.s
 
-CMakeFiles/kmeans.dir/src/kmeans_main.cpp.o: CMakeFiles/kmeans.dir/flags.make
-CMakeFiles/kmeans.dir/src/kmeans_main.cpp.o: ../src/kmeans_main.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/kmeans.dir/src/kmeans_main.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/kmeans.dir/src/kmeans_main.cpp.o -c /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/src/kmeans_main.cpp
+CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.o: CMakeFiles/kmeans.dir/flags.make
+CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.o: ../kmeans/kmeans_main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.o -c /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/kmeans/kmeans_main.cpp
 
-CMakeFiles/kmeans.dir/src/kmeans_main.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/kmeans.dir/src/kmeans_main.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/src/kmeans_main.cpp > CMakeFiles/kmeans.dir/src/kmeans_main.cpp.i
+CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/kmeans/kmeans_main.cpp > CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.i
 
-CMakeFiles/kmeans.dir/src/kmeans_main.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/kmeans.dir/src/kmeans_main.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/src/kmeans_main.cpp -o CMakeFiles/kmeans.dir/src/kmeans_main.cpp.s
+CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/kmeans/kmeans_main.cpp -o CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.s
 
 # Object files for target kmeans
 kmeans_OBJECTS = \
-"CMakeFiles/kmeans.dir/src/kmeans.cpp.o" \
-"CMakeFiles/kmeans.dir/src/kmeans_main.cpp.o"
+"CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.o" \
+"CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.o"
 
 # External object files for target kmeans
 kmeans_EXTERNAL_OBJECTS =
 
-kmeans: CMakeFiles/kmeans.dir/src/kmeans.cpp.o
-kmeans: CMakeFiles/kmeans.dir/src/kmeans_main.cpp.o
+kmeans: CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.o
+kmeans: CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.o
 kmeans: CMakeFiles/kmeans.dir/build.make
 kmeans: /usr/lib/x86_64-linux-gnu/libpcl_apps.so
 kmeans: /usr/lib/x86_64-linux-gnu/libpcl_outofcore.so

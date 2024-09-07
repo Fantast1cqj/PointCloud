@@ -175,6 +175,60 @@ pcl_recognition_test/fast:
 	$(MAKE) -f CMakeFiles/pcl_recognition_test.dir/build.make CMakeFiles/pcl_recognition_test.dir/build
 .PHONY : pcl_recognition_test/fast
 
+kmeans/kmeans.o: kmeans/kmeans.cpp.o
+
+.PHONY : kmeans/kmeans.o
+
+# target to build an object file
+kmeans/kmeans.cpp.o:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.o
+.PHONY : kmeans/kmeans.cpp.o
+
+kmeans/kmeans.i: kmeans/kmeans.cpp.i
+
+.PHONY : kmeans/kmeans.i
+
+# target to preprocess a source file
+kmeans/kmeans.cpp.i:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.i
+.PHONY : kmeans/kmeans.cpp.i
+
+kmeans/kmeans.s: kmeans/kmeans.cpp.s
+
+.PHONY : kmeans/kmeans.s
+
+# target to generate assembly for a file
+kmeans/kmeans.cpp.s:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.s
+.PHONY : kmeans/kmeans.cpp.s
+
+kmeans/kmeans_main.o: kmeans/kmeans_main.cpp.o
+
+.PHONY : kmeans/kmeans_main.o
+
+# target to build an object file
+kmeans/kmeans_main.cpp.o:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.o
+.PHONY : kmeans/kmeans_main.cpp.o
+
+kmeans/kmeans_main.i: kmeans/kmeans_main.cpp.i
+
+.PHONY : kmeans/kmeans_main.i
+
+# target to preprocess a source file
+kmeans/kmeans_main.cpp.i:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.i
+.PHONY : kmeans/kmeans_main.cpp.i
+
+kmeans/kmeans_main.s: kmeans/kmeans_main.cpp.s
+
+.PHONY : kmeans/kmeans_main.s
+
+# target to generate assembly for a file
+kmeans/kmeans_main.cpp.s:
+	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.s
+.PHONY : kmeans/kmeans_main.cpp.s
+
 pca/normals.o: pca/normals.cpp.o
 
 .PHONY : pca/normals.o
@@ -256,60 +310,6 @@ src/correspondence_grouping.cpp.s:
 	$(MAKE) -f CMakeFiles/pcl_recognition_test.dir/build.make CMakeFiles/pcl_recognition_test.dir/src/correspondence_grouping.cpp.s
 .PHONY : src/correspondence_grouping.cpp.s
 
-src/kmeans.o: src/kmeans.cpp.o
-
-.PHONY : src/kmeans.o
-
-# target to build an object file
-src/kmeans.cpp.o:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/src/kmeans.cpp.o
-.PHONY : src/kmeans.cpp.o
-
-src/kmeans.i: src/kmeans.cpp.i
-
-.PHONY : src/kmeans.i
-
-# target to preprocess a source file
-src/kmeans.cpp.i:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/src/kmeans.cpp.i
-.PHONY : src/kmeans.cpp.i
-
-src/kmeans.s: src/kmeans.cpp.s
-
-.PHONY : src/kmeans.s
-
-# target to generate assembly for a file
-src/kmeans.cpp.s:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/src/kmeans.cpp.s
-.PHONY : src/kmeans.cpp.s
-
-src/kmeans_main.o: src/kmeans_main.cpp.o
-
-.PHONY : src/kmeans_main.o
-
-# target to build an object file
-src/kmeans_main.cpp.o:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/src/kmeans_main.cpp.o
-.PHONY : src/kmeans_main.cpp.o
-
-src/kmeans_main.i: src/kmeans_main.cpp.i
-
-.PHONY : src/kmeans_main.i
-
-# target to preprocess a source file
-src/kmeans_main.cpp.i:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/src/kmeans_main.cpp.i
-.PHONY : src/kmeans_main.cpp.i
-
-src/kmeans_main.s: src/kmeans_main.cpp.s
-
-.PHONY : src/kmeans_main.s
-
-# target to generate assembly for a file
-src/kmeans_main.cpp.s:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/src/kmeans_main.cpp.s
-.PHONY : src/kmeans_main.cpp.s
-
 src/pcd_viewer.o: src/pcd_viewer.cpp.o
 
 .PHONY : src/pcd_viewer.o
@@ -377,6 +377,12 @@ help:
 	@echo "... txt2pcd"
 	@echo "... normals"
 	@echo "... pcl_recognition_test"
+	@echo "... kmeans/kmeans.o"
+	@echo "... kmeans/kmeans.i"
+	@echo "... kmeans/kmeans.s"
+	@echo "... kmeans/kmeans_main.o"
+	@echo "... kmeans/kmeans_main.i"
+	@echo "... kmeans/kmeans_main.s"
 	@echo "... pca/normals.o"
 	@echo "... pca/normals.i"
 	@echo "... pca/normals.s"
@@ -386,12 +392,6 @@ help:
 	@echo "... src/correspondence_grouping.o"
 	@echo "... src/correspondence_grouping.i"
 	@echo "... src/correspondence_grouping.s"
-	@echo "... src/kmeans.o"
-	@echo "... src/kmeans.i"
-	@echo "... src/kmeans.s"
-	@echo "... src/kmeans_main.o"
-	@echo "... src/kmeans_main.i"
-	@echo "... src/kmeans_main.s"
 	@echo "... src/pcd_viewer.o"
 	@echo "... src/pcd_viewer.i"
 	@echo "... src/pcd_viewer.s"

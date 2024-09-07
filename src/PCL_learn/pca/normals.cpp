@@ -1,3 +1,5 @@
+/****** 求点云点的法向量 特征值最小的对应的向量是法向量 ******/
+// 用这个也能求法向量 pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal>
 # include <iostream>
 # include <pcl/io/pcd_io.h>
 # include "../src/pcd_viewer.h"
@@ -48,8 +50,9 @@ int main(int argc, char** argv)
     
 
     std::cout << "2" << std::endl;
-
-
+    /******************************************************************************************************/
+    /* 求法向量：遍历点，对于某个点，找这个点的最近邻十个点，将这十个点放入 pca 中得到一个 eigen_vectors，最后一列（最小特征值）为法向量 */
+    /******************************************************************************************************/
     for(uint16_t k(0); k < cloud_xyz->size(); k++)
     {
         pcl::PointXYZRGB searchPoint;
@@ -68,7 +71,7 @@ int main(int argc, char** argv)
         
         pca.setInputCloud(cloud_);
         Eigen::Matrix3f eigen_vectors = pca.getEigenVectors();
-        cloud_normal_compute->points[k].normal_x = eigen_vectors(0, 2);
+        cloud_normal_compute->points[k].normal_x = eigen_vectors(0, 2);   // 最小特征值 对应的特征向量是法向量
         cloud_normal_compute->points[k].normal_y = eigen_vectors(1, 2);
         cloud_normal_compute->points[k].normal_z = eigen_vectors(2, 2);
     }

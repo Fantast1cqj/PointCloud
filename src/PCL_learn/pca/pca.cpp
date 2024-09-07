@@ -1,4 +1,5 @@
-/****** 点云 PCA 求主成分方向 ******/
+/****** 点云 PCA 求主成分方向 特征值最小的对应的向量是法向量******/
+
 # include <iostream>
 # include <fstream>
 # include <string>
@@ -7,6 +8,8 @@
 #include <pcl/common/common.h>
 #include <pcl/common/pca.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/features/integral_image_normal.h>
 # include "../src/pcd_viewer.h"
 
 int main(int argc, char** argv)
@@ -88,7 +91,7 @@ int main(int argc, char** argv)
     Eigen::Matrix3f eigen_vectors = eigen_solver.eigenvectors();    // col(0) 对应特征值最小
     Eigen::Vector3f eigen_values = eigen_solver.eigenvalues();      // 特征值从小到大
 
-    std::cout << "Eigen Vectors: " << std::endl << eigen_vectors << std::endl;
+    std::cout << "Eigen Vectors: " << std::endl << eigen_vectors << std::endl;  // 特征值最小的对应的向量是法向量
     std::cout << "Eigen Values: " << std::endl << eigen_values << std::endl;
 
     /*
@@ -140,7 +143,7 @@ int main(int argc, char** argv)
     viewer->addArrow(pcl_end3, pcl_start, 1.0, 0, 0, false, "arrow3");
     
 
-
+    /****** 使用 PCL 进行 PCA ******/
     pcl::PCA<pcl::PointNormal> pca;
     pca.setInputCloud(airplane_0001);
     Eigen::Vector3f eigen_values2 = pca.getEigenValues();
@@ -150,12 +153,13 @@ int main(int argc, char** argv)
     std::cout << "Eigen Vectors(PCL): \n" << eigen_vectors2 << std::endl;
 
 
+
+
     while (!viewer->wasStopped())
     {
         viewer->spinOnce(10);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));   // 窗口 10 ms 刷新一次
     }
-
 
 
 

@@ -4,8 +4,8 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/src/kmeans.cpp" "/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles/kmeans.dir/src/kmeans.cpp.o"
-  "/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/src/kmeans_main.cpp" "/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles/kmeans.dir/src/kmeans_main.cpp.o"
+  "/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/kmeans/kmeans.cpp" "/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.o"
+  "/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/kmeans/kmeans_main.cpp" "/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
