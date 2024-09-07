@@ -42,6 +42,7 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
   - [WalkFormer](#walkformer)
     - [Point Walk](#point-walk)
   - [Zero-shot](#zero-shot)
+    - [Point Cloud Colorization：](#point-cloud-colorization)
 
 
 # Lidar 运动补偿
@@ -387,6 +388,6 @@ SFA 接收输入 (X, u)，其中 X 是 n × c 的矩阵，u 是上采样比，SF
 
 <img src="note_pic/10.png"  width="850" />
 
-1. Point Cloud Colorization：
+### Point Cloud Colorization：
 
-通过 reference viewpoint estimation 获得相机位姿 Vp，Pin 初始化 3DGS 得到 Gin，Gin的中心是固定的，以保持Pin的形状
+通过 reference viewpoint estimation 获得相机位姿 Vp，Pin 初始化 3DGS 得到 Gin，Gin的中心是固定的，以保持Pin的形状。
