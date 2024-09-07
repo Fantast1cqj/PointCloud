@@ -1,6 +1,7 @@
 /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles/edit_cache.dir
 /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles/kmeans.dir
-/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles/pcd_viewer.dir
+/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles/pca.dir
 /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles/rebuild_cache.dir
 /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles/txt2pcd.dir
+/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles/normals.dir
 /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles/pcl_recognition_test.dir

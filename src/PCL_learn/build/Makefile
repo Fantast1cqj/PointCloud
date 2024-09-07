@@ -124,17 +124,17 @@ kmeans/fast:
 .PHONY : kmeans/fast
 
 #=============================================================================
-# Target rules for targets named pcd_viewer
+# Target rules for targets named pca
 
 # Build rule for target.
-pcd_viewer: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 pcd_viewer
-.PHONY : pcd_viewer
+pca: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 pca
+.PHONY : pca
 
 # fast build rule for target.
-pcd_viewer/fast:
-	$(MAKE) -f CMakeFiles/pcd_viewer.dir/build.make CMakeFiles/pcd_viewer.dir/build
-.PHONY : pcd_viewer/fast
+pca/fast:
+	$(MAKE) -f CMakeFiles/pca.dir/build.make CMakeFiles/pca.dir/build
+.PHONY : pca/fast
 
 #=============================================================================
 # Target rules for targets named txt2pcd
@@ -150,6 +150,19 @@ txt2pcd/fast:
 .PHONY : txt2pcd/fast
 
 #=============================================================================
+# Target rules for targets named normals
+
+# Build rule for target.
+normals: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 normals
+.PHONY : normals
+
+# fast build rule for target.
+normals/fast:
+	$(MAKE) -f CMakeFiles/normals.dir/build.make CMakeFiles/normals.dir/build
+.PHONY : normals/fast
+
+#=============================================================================
 # Target rules for targets named pcl_recognition_test
 
 # Build rule for target.
@@ -161,6 +174,60 @@ pcl_recognition_test: cmake_check_build_system
 pcl_recognition_test/fast:
 	$(MAKE) -f CMakeFiles/pcl_recognition_test.dir/build.make CMakeFiles/pcl_recognition_test.dir/build
 .PHONY : pcl_recognition_test/fast
+
+pca/normals.o: pca/normals.cpp.o
+
+.PHONY : pca/normals.o
+
+# target to build an object file
+pca/normals.cpp.o:
+	$(MAKE) -f CMakeFiles/normals.dir/build.make CMakeFiles/normals.dir/pca/normals.cpp.o
+.PHONY : pca/normals.cpp.o
+
+pca/normals.i: pca/normals.cpp.i
+
+.PHONY : pca/normals.i
+
+# target to preprocess a source file
+pca/normals.cpp.i:
+	$(MAKE) -f CMakeFiles/normals.dir/build.make CMakeFiles/normals.dir/pca/normals.cpp.i
+.PHONY : pca/normals.cpp.i
+
+pca/normals.s: pca/normals.cpp.s
+
+.PHONY : pca/normals.s
+
+# target to generate assembly for a file
+pca/normals.cpp.s:
+	$(MAKE) -f CMakeFiles/normals.dir/build.make CMakeFiles/normals.dir/pca/normals.cpp.s
+.PHONY : pca/normals.cpp.s
+
+pca/pca.o: pca/pca.cpp.o
+
+.PHONY : pca/pca.o
+
+# target to build an object file
+pca/pca.cpp.o:
+	$(MAKE) -f CMakeFiles/pca.dir/build.make CMakeFiles/pca.dir/pca/pca.cpp.o
+.PHONY : pca/pca.cpp.o
+
+pca/pca.i: pca/pca.cpp.i
+
+.PHONY : pca/pca.i
+
+# target to preprocess a source file
+pca/pca.cpp.i:
+	$(MAKE) -f CMakeFiles/pca.dir/build.make CMakeFiles/pca.dir/pca/pca.cpp.i
+.PHONY : pca/pca.cpp.i
+
+pca/pca.s: pca/pca.cpp.s
+
+.PHONY : pca/pca.s
+
+# target to generate assembly for a file
+pca/pca.cpp.s:
+	$(MAKE) -f CMakeFiles/pca.dir/build.make CMakeFiles/pca.dir/pca/pca.cpp.s
+.PHONY : pca/pca.cpp.s
 
 src/correspondence_grouping.o: src/correspondence_grouping.cpp.o
 
@@ -249,7 +316,7 @@ src/pcd_viewer.o: src/pcd_viewer.cpp.o
 
 # target to build an object file
 src/pcd_viewer.cpp.o:
-	$(MAKE) -f CMakeFiles/pcd_viewer.dir/build.make CMakeFiles/pcd_viewer.dir/src/pcd_viewer.cpp.o
+	$(MAKE) -f CMakeFiles/normals.dir/build.make CMakeFiles/normals.dir/src/pcd_viewer.cpp.o
 .PHONY : src/pcd_viewer.cpp.o
 
 src/pcd_viewer.i: src/pcd_viewer.cpp.i
@@ -258,7 +325,7 @@ src/pcd_viewer.i: src/pcd_viewer.cpp.i
 
 # target to preprocess a source file
 src/pcd_viewer.cpp.i:
-	$(MAKE) -f CMakeFiles/pcd_viewer.dir/build.make CMakeFiles/pcd_viewer.dir/src/pcd_viewer.cpp.i
+	$(MAKE) -f CMakeFiles/normals.dir/build.make CMakeFiles/normals.dir/src/pcd_viewer.cpp.i
 .PHONY : src/pcd_viewer.cpp.i
 
 src/pcd_viewer.s: src/pcd_viewer.cpp.s
@@ -267,7 +334,7 @@ src/pcd_viewer.s: src/pcd_viewer.cpp.s
 
 # target to generate assembly for a file
 src/pcd_viewer.cpp.s:
-	$(MAKE) -f CMakeFiles/pcd_viewer.dir/build.make CMakeFiles/pcd_viewer.dir/src/pcd_viewer.cpp.s
+	$(MAKE) -f CMakeFiles/normals.dir/build.make CMakeFiles/normals.dir/src/pcd_viewer.cpp.s
 .PHONY : src/pcd_viewer.cpp.s
 
 src/txt2pcd.o: src/txt2pcd.cpp.o
@@ -305,10 +372,17 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... kmeans"
-	@echo "... pcd_viewer"
+	@echo "... pca"
 	@echo "... rebuild_cache"
 	@echo "... txt2pcd"
+	@echo "... normals"
 	@echo "... pcl_recognition_test"
+	@echo "... pca/normals.o"
+	@echo "... pca/normals.i"
+	@echo "... pca/normals.s"
+	@echo "... pca/pca.o"
+	@echo "... pca/pca.i"
+	@echo "... pca/pca.s"
 	@echo "... src/correspondence_grouping.o"
 	@echo "... src/correspondence_grouping.i"
 	@echo "... src/correspondence_grouping.s"

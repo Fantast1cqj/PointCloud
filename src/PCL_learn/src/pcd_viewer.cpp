@@ -98,27 +98,27 @@ void cloud_viewer (pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, pcl::Point
 
 
 
-int main(int argc, char** argv)
-{
+// int main(int argc, char** argv)
+// {
 
-    pcl::PCLPointCloud2 cloud_binary;
-    if( pcl::io::loadPCDFile("airplane_0001.pcd", cloud_binary) == -1)
-    {
-        std::cout << "找不到 pcd 文件" << std::endl;
-        return -1;
-    }
-    pcl::PointCloud<pcl::PointNormal>::Ptr cloud_airplane_0001 (new pcl::PointCloud<pcl::PointNormal>);
+//     pcl::PCLPointCloud2 cloud_binary;
+//     if( pcl::io::loadPCDFile("airplane_0001.pcd", cloud_binary) == -1)
+//     {
+//         std::cout << "找不到 pcd 文件" << std::endl;
+//         return -1;
+//     }
+//     pcl::PointCloud<pcl::PointNormal>::Ptr cloud_airplane_0001 (new pcl::PointCloud<pcl::PointNormal>);
    
 
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_airplane_0001_1 (new pcl::PointCloud<pcl::PointXYZRGB>);
+//     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_airplane_0001_1 (new pcl::PointCloud<pcl::PointXYZRGB>);
 
 
-    pcl::fromPCLPointCloud2(cloud_binary, *cloud_airplane_0001_1);
+//     pcl::fromPCLPointCloud2(cloud_binary, *cloud_airplane_0001_1);
     
-    cloud_viewer(cloud_airplane_0001_1, 1);
-    // cloud_viewer_simple(cloud_airplane_0001_1);
-    // cloud_viewer(cloud_airplane_0001, 1);
+//     cloud_viewer(cloud_airplane_0001_1, 1);
+//     // cloud_viewer_simple(cloud_airplane_0001_1);
+//     // cloud_viewer(cloud_airplane_0001, 1);
 
 
-    return 0;
-}
+//     return 0;
+// }

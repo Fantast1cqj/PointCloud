@@ -123,7 +123,8 @@ set(CMAKE_MAKEFILE_PRODUCTS
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/kmeans.dir/DependInfo.cmake"
-  "CMakeFiles/pcd_viewer.dir/DependInfo.cmake"
+  "CMakeFiles/pca.dir/DependInfo.cmake"
   "CMakeFiles/txt2pcd.dir/DependInfo.cmake"
+  "CMakeFiles/normals.dir/DependInfo.cmake"
   "CMakeFiles/pcl_recognition_test.dir/DependInfo.cmake"
   )

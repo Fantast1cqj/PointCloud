@@ -510,6 +510,12 @@ normals_BINARY_DIR:STATIC=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/b
 normals_SOURCE_DIR:STATIC=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn
 
 //Value Computed by CMake
+pca_BINARY_DIR:STATIC=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build
+
+//Value Computed by CMake
+pca_SOURCE_DIR:STATIC=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn
+
+//Value Computed by CMake
 pcd_viewer_BINARY_DIR:STATIC=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build
 
 //Value Computed by CMake
