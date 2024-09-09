@@ -14,6 +14,7 @@
 void cloud_viewer_simple (pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud);
 void cloud_viewer(pcl::PointCloud<pcl::PointNormal>::ConstPtr cloud, u_int8_t mod);
 void cloud_viewer(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, u_int8_t mod);
+void cloud_viewer(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud, u_int8_t mod);
 void cloud_viewer (pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, pcl::PointCloud<pcl::Normal>::ConstPtr normals,u_int8_t mod);
 
 

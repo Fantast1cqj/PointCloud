@@ -17,8 +17,8 @@ class KMeans
         ~KMeans();
 
     private:
-        int max_iteration_;
-        int cluster_num_;
+        int max_iteration_;  // 最大迭代次数
+        int cluster_num_;    // 聚类个数
 
     
 };

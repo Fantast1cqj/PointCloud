@@ -16,6 +16,20 @@ void cloud_viewer_simple (pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud)
     }
 }
 
+void cloud_viewer(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud, u_int8_t mod)
+{
+    // 处理 pcl::PointXYZ 类型的点云
+    pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer("Viewer"));
+    // viewer->addPointCloudNormals<pcl::PointNormal>(cloud, 1, 0.1, "normals");
+    viewer->addPointCloud<pcl::PointXYZ>(cloud, "sample cloud");
+    viewer->addCoordinateSystem(1.0);
+    while (!viewer->wasStopped())
+    {
+        viewer->spinOnce(10);
+        std::this_thread::sleep_for(10ms);
+    }
+}
+
 
 void cloud_viewer(pcl::PointCloud<pcl::PointNormal>::ConstPtr cloud, u_int8_t mod)
 {

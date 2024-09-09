@@ -10,7 +10,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/features/integral_image_normal.h>
-# include "../src/pcd_viewer.h"
+# include "../utils/pcd_viewer.h"
 
 int main(int argc, char** argv)
 {   

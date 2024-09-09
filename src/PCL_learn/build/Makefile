@@ -56,17 +56,6 @@ CMAKE_BINARY_DIR = /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target edit_cache
-edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
-	/usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
-.PHONY : edit_cache
-
-# Special rule for the target edit_cache
-edit_cache/fast: edit_cache
-
-.PHONY : edit_cache/fast
-
 # Special rule for the target rebuild_cache
 rebuild_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
@@ -77,6 +66,17 @@ rebuild_cache:
 rebuild_cache/fast: rebuild_cache
 
 .PHONY : rebuild_cache/fast
+
+# Special rule for the target edit_cache
+edit_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
+	/usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+.PHONY : edit_cache
+
+# Special rule for the target edit_cache
+edit_cache/fast: edit_cache
+
+.PHONY : edit_cache/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -111,6 +111,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named filter
+
+# Build rule for target.
+filter: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 filter
+.PHONY : filter
+
+# fast build rule for target.
+filter/fast:
+	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/build
+.PHONY : filter/fast
+
+#=============================================================================
 # Target rules for targets named kmeans
 
 # Build rule for target.
@@ -123,57 +136,32 @@ kmeans/fast:
 	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/build
 .PHONY : kmeans/fast
 
-#=============================================================================
-# Target rules for targets named pca
+filter/pass_through.o: filter/pass_through.cpp.o
 
-# Build rule for target.
-pca: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 pca
-.PHONY : pca
+.PHONY : filter/pass_through.o
 
-# fast build rule for target.
-pca/fast:
-	$(MAKE) -f CMakeFiles/pca.dir/build.make CMakeFiles/pca.dir/build
-.PHONY : pca/fast
+# target to build an object file
+filter/pass_through.cpp.o:
+	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/filter/pass_through.cpp.o
+.PHONY : filter/pass_through.cpp.o
 
-#=============================================================================
-# Target rules for targets named txt2pcd
+filter/pass_through.i: filter/pass_through.cpp.i
 
-# Build rule for target.
-txt2pcd: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 txt2pcd
-.PHONY : txt2pcd
+.PHONY : filter/pass_through.i
 
-# fast build rule for target.
-txt2pcd/fast:
-	$(MAKE) -f CMakeFiles/txt2pcd.dir/build.make CMakeFiles/txt2pcd.dir/build
-.PHONY : txt2pcd/fast
+# target to preprocess a source file
+filter/pass_through.cpp.i:
+	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/filter/pass_through.cpp.i
+.PHONY : filter/pass_through.cpp.i
 
-#=============================================================================
-# Target rules for targets named normals
+filter/pass_through.s: filter/pass_through.cpp.s
 
-# Build rule for target.
-normals: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 normals
-.PHONY : normals
+.PHONY : filter/pass_through.s
 
-# fast build rule for target.
-normals/fast:
-	$(MAKE) -f CMakeFiles/normals.dir/build.make CMakeFiles/normals.dir/build
-.PHONY : normals/fast
-
-#=============================================================================
-# Target rules for targets named pcl_recognition_test
-
-# Build rule for target.
-pcl_recognition_test: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 pcl_recognition_test
-.PHONY : pcl_recognition_test
-
-# fast build rule for target.
-pcl_recognition_test/fast:
-	$(MAKE) -f CMakeFiles/pcl_recognition_test.dir/build.make CMakeFiles/pcl_recognition_test.dir/build
-.PHONY : pcl_recognition_test/fast
+# target to generate assembly for a file
+filter/pass_through.cpp.s:
+	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/filter/pass_through.cpp.s
+.PHONY : filter/pass_through.cpp.s
 
 kmeans/kmeans.o: kmeans/kmeans.cpp.o
 
@@ -229,140 +217,32 @@ kmeans/kmeans_main.cpp.s:
 	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.s
 .PHONY : kmeans/kmeans_main.cpp.s
 
-pca/normals.o: pca/normals.cpp.o
+utils/pcd_viewer.o: utils/pcd_viewer.cpp.o
 
-.PHONY : pca/normals.o
-
-# target to build an object file
-pca/normals.cpp.o:
-	$(MAKE) -f CMakeFiles/normals.dir/build.make CMakeFiles/normals.dir/pca/normals.cpp.o
-.PHONY : pca/normals.cpp.o
-
-pca/normals.i: pca/normals.cpp.i
-
-.PHONY : pca/normals.i
-
-# target to preprocess a source file
-pca/normals.cpp.i:
-	$(MAKE) -f CMakeFiles/normals.dir/build.make CMakeFiles/normals.dir/pca/normals.cpp.i
-.PHONY : pca/normals.cpp.i
-
-pca/normals.s: pca/normals.cpp.s
-
-.PHONY : pca/normals.s
-
-# target to generate assembly for a file
-pca/normals.cpp.s:
-	$(MAKE) -f CMakeFiles/normals.dir/build.make CMakeFiles/normals.dir/pca/normals.cpp.s
-.PHONY : pca/normals.cpp.s
-
-pca/pca.o: pca/pca.cpp.o
-
-.PHONY : pca/pca.o
+.PHONY : utils/pcd_viewer.o
 
 # target to build an object file
-pca/pca.cpp.o:
-	$(MAKE) -f CMakeFiles/pca.dir/build.make CMakeFiles/pca.dir/pca/pca.cpp.o
-.PHONY : pca/pca.cpp.o
+utils/pcd_viewer.cpp.o:
+	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/utils/pcd_viewer.cpp.o
+.PHONY : utils/pcd_viewer.cpp.o
 
-pca/pca.i: pca/pca.cpp.i
+utils/pcd_viewer.i: utils/pcd_viewer.cpp.i
 
-.PHONY : pca/pca.i
-
-# target to preprocess a source file
-pca/pca.cpp.i:
-	$(MAKE) -f CMakeFiles/pca.dir/build.make CMakeFiles/pca.dir/pca/pca.cpp.i
-.PHONY : pca/pca.cpp.i
-
-pca/pca.s: pca/pca.cpp.s
-
-.PHONY : pca/pca.s
-
-# target to generate assembly for a file
-pca/pca.cpp.s:
-	$(MAKE) -f CMakeFiles/pca.dir/build.make CMakeFiles/pca.dir/pca/pca.cpp.s
-.PHONY : pca/pca.cpp.s
-
-src/correspondence_grouping.o: src/correspondence_grouping.cpp.o
-
-.PHONY : src/correspondence_grouping.o
-
-# target to build an object file
-src/correspondence_grouping.cpp.o:
-	$(MAKE) -f CMakeFiles/pcl_recognition_test.dir/build.make CMakeFiles/pcl_recognition_test.dir/src/correspondence_grouping.cpp.o
-.PHONY : src/correspondence_grouping.cpp.o
-
-src/correspondence_grouping.i: src/correspondence_grouping.cpp.i
-
-.PHONY : src/correspondence_grouping.i
+.PHONY : utils/pcd_viewer.i
 
 # target to preprocess a source file
-src/correspondence_grouping.cpp.i:
-	$(MAKE) -f CMakeFiles/pcl_recognition_test.dir/build.make CMakeFiles/pcl_recognition_test.dir/src/correspondence_grouping.cpp.i
-.PHONY : src/correspondence_grouping.cpp.i
+utils/pcd_viewer.cpp.i:
+	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/utils/pcd_viewer.cpp.i
+.PHONY : utils/pcd_viewer.cpp.i
 
-src/correspondence_grouping.s: src/correspondence_grouping.cpp.s
+utils/pcd_viewer.s: utils/pcd_viewer.cpp.s
 
-.PHONY : src/correspondence_grouping.s
-
-# target to generate assembly for a file
-src/correspondence_grouping.cpp.s:
-	$(MAKE) -f CMakeFiles/pcl_recognition_test.dir/build.make CMakeFiles/pcl_recognition_test.dir/src/correspondence_grouping.cpp.s
-.PHONY : src/correspondence_grouping.cpp.s
-
-src/pcd_viewer.o: src/pcd_viewer.cpp.o
-
-.PHONY : src/pcd_viewer.o
-
-# target to build an object file
-src/pcd_viewer.cpp.o:
-	$(MAKE) -f CMakeFiles/normals.dir/build.make CMakeFiles/normals.dir/src/pcd_viewer.cpp.o
-.PHONY : src/pcd_viewer.cpp.o
-
-src/pcd_viewer.i: src/pcd_viewer.cpp.i
-
-.PHONY : src/pcd_viewer.i
-
-# target to preprocess a source file
-src/pcd_viewer.cpp.i:
-	$(MAKE) -f CMakeFiles/normals.dir/build.make CMakeFiles/normals.dir/src/pcd_viewer.cpp.i
-.PHONY : src/pcd_viewer.cpp.i
-
-src/pcd_viewer.s: src/pcd_viewer.cpp.s
-
-.PHONY : src/pcd_viewer.s
+.PHONY : utils/pcd_viewer.s
 
 # target to generate assembly for a file
-src/pcd_viewer.cpp.s:
-	$(MAKE) -f CMakeFiles/normals.dir/build.make CMakeFiles/normals.dir/src/pcd_viewer.cpp.s
-.PHONY : src/pcd_viewer.cpp.s
-
-src/txt2pcd.o: src/txt2pcd.cpp.o
-
-.PHONY : src/txt2pcd.o
-
-# target to build an object file
-src/txt2pcd.cpp.o:
-	$(MAKE) -f CMakeFiles/txt2pcd.dir/build.make CMakeFiles/txt2pcd.dir/src/txt2pcd.cpp.o
-.PHONY : src/txt2pcd.cpp.o
-
-src/txt2pcd.i: src/txt2pcd.cpp.i
-
-.PHONY : src/txt2pcd.i
-
-# target to preprocess a source file
-src/txt2pcd.cpp.i:
-	$(MAKE) -f CMakeFiles/txt2pcd.dir/build.make CMakeFiles/txt2pcd.dir/src/txt2pcd.cpp.i
-.PHONY : src/txt2pcd.cpp.i
-
-src/txt2pcd.s: src/txt2pcd.cpp.s
-
-.PHONY : src/txt2pcd.s
-
-# target to generate assembly for a file
-src/txt2pcd.cpp.s:
-	$(MAKE) -f CMakeFiles/txt2pcd.dir/build.make CMakeFiles/txt2pcd.dir/src/txt2pcd.cpp.s
-.PHONY : src/txt2pcd.cpp.s
+utils/pcd_viewer.cpp.s:
+	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/utils/pcd_viewer.cpp.s
+.PHONY : utils/pcd_viewer.cpp.s
 
 # Help Target
 help:
@@ -370,34 +250,22 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
-	@echo "... edit_cache"
-	@echo "... kmeans"
-	@echo "... pca"
 	@echo "... rebuild_cache"
-	@echo "... txt2pcd"
-	@echo "... normals"
-	@echo "... pcl_recognition_test"
+	@echo "... edit_cache"
+	@echo "... filter"
+	@echo "... kmeans"
+	@echo "... filter/pass_through.o"
+	@echo "... filter/pass_through.i"
+	@echo "... filter/pass_through.s"
 	@echo "... kmeans/kmeans.o"
 	@echo "... kmeans/kmeans.i"
 	@echo "... kmeans/kmeans.s"
 	@echo "... kmeans/kmeans_main.o"
 	@echo "... kmeans/kmeans_main.i"
 	@echo "... kmeans/kmeans_main.s"
-	@echo "... pca/normals.o"
-	@echo "... pca/normals.i"
-	@echo "... pca/normals.s"
-	@echo "... pca/pca.o"
-	@echo "... pca/pca.i"
-	@echo "... pca/pca.s"
-	@echo "... src/correspondence_grouping.o"
-	@echo "... src/correspondence_grouping.i"
-	@echo "... src/correspondence_grouping.s"
-	@echo "... src/pcd_viewer.o"
-	@echo "... src/pcd_viewer.i"
-	@echo "... src/pcd_viewer.s"
-	@echo "... src/txt2pcd.o"
-	@echo "... src/txt2pcd.i"
-	@echo "... src/txt2pcd.s"
+	@echo "... utils/pcd_viewer.o"
+	@echo "... utils/pcd_viewer.i"
+	@echo "... utils/pcd_viewer.s"
 .PHONY : help
 
 
