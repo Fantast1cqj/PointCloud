@@ -233,8 +233,8 @@ mask 作用是防止 t 时刻看到以后的东西
 其中每个注意力权重是一个向量，在更细粒度的水平上对不同的维度进行加权
 
 #  点云语义分割
-![alt text](note_pic/image.png)
-![alt text](note_pic/image-1.png)
+<img src="note_pic/image.png"  width="600" />
+<img src="note_pic/image-1.png"  width="600" />
 
 分类 目标检测 语义分割 区别
 语义分割给每个像素一个 label
@@ -257,6 +257,7 @@ mask 作用是防止 t 时刻看到以后的东西
 6. 通过一个 mlp 变成 k 维，1*k 表示这组点云在每一个类别上的得分
 
 <img src="note_pic/12.png"  width="800" />
+
 分割网络（每个点都有 k 个得分）：
 
 1. 将每个点的局部特征和全局特征拼接在一起，变成了 n*(64 + 1024)
@@ -275,14 +276,18 @@ sampling: uniform sampling, FPS
 
 grouping: KNN, Ball query
 
-<img src="note_pic/14.png"  width="700" />
+<img src="note_pic/14.png"  width="1000" />
 
 1. 对点云进行采样与聚合，经过一个 point net 点数量减少，特征维度增加
 2. 再进行上面的过程，获得红色的数据
 3. 分类：红色的全局特征经过point net 和 mlp 得到分类得分
 4. 分割：红色的全局特征经过插值，再与之前蓝色的数据进行拼接，经过point net再插值拼接，获得每个点的得分
 
-在 Point Net++ 中，grouping 环节受到点密度的影响，离激光雷达近的地方点密度大，远的地方密度小，在远的地方用球采样，可能导致球里面点很少，影响特征提取。文章中提出 MSG 和 MRG 解决，MSG 在同一级别上用不同大小的半径提取特征，并进行拼接；MRG 在不同级别上提取特征进行拼接。
+在 Point Net++ 中，grouping 环节受到点密度的影响，离激光雷达近的地方点密度大，远的地方密度小，在远的地方用球采样，可能导致球里面点很少，影响特征提取。文章中提出 **MSG** 和 **MRG** 解决，MSG 在同一级别上用不同大小的半径提取特征，并进行拼接；MRG 在不同级别上提取特征进行拼接。
+
+<img src="note_pic/15.png"  width="500" />
+
+在分割任务中，需要恢复点的数量，找要恢复的点最近的三个上层点，使用距离的倒数作为权重进行插值，再将原来的特征拼接再后面
 
 # 点云补全
 ## AnchorFormer
