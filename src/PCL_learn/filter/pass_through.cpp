@@ -1,4 +1,5 @@
 /****** PCL 直通滤波器 pcl::PassThrough<pcl::PointXYZ> filter ******/
+// 对坐标某一范围内进行去除或保留
 #include <iostream>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>

@@ -53,6 +53,7 @@ CMAKE_BINARY_DIR = /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
+all: CMakeFiles/voxelgrid.dir/all
 all: CMakeFiles/filter.dir/all
 all: CMakeFiles/kmeans.dir/all
 
@@ -64,10 +65,38 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
+clean: CMakeFiles/voxelgrid.dir/clean
 clean: CMakeFiles/filter.dir/clean
 clean: CMakeFiles/kmeans.dir/clean
 
 .PHONY : clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/voxelgrid.dir
+
+# All Build rule for target.
+CMakeFiles/voxelgrid.dir/all:
+	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/depend
+	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles --progress-num=7,8,9 "Built target voxelgrid"
+.PHONY : CMakeFiles/voxelgrid.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/voxelgrid.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles 3
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/voxelgrid.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles 0
+.PHONY : CMakeFiles/voxelgrid.dir/rule
+
+# Convenience name for target.
+voxelgrid: CMakeFiles/voxelgrid.dir/rule
+
+.PHONY : voxelgrid
+
+# clean rule for target.
+CMakeFiles/voxelgrid.dir/clean:
+	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/clean
+.PHONY : CMakeFiles/voxelgrid.dir/clean
 
 #=============================================================================
 # Target rules for target CMakeFiles/filter.dir

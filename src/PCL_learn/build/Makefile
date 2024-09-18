@@ -111,6 +111,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named voxelgrid
+
+# Build rule for target.
+voxelgrid: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 voxelgrid
+.PHONY : voxelgrid
+
+# fast build rule for target.
+voxelgrid/fast:
+	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/build
+.PHONY : voxelgrid/fast
+
+#=============================================================================
 # Target rules for targets named filter
 
 # Build rule for target.
@@ -162,6 +175,33 @@ filter/pass_through.s: filter/pass_through.cpp.s
 filter/pass_through.cpp.s:
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/filter/pass_through.cpp.s
 .PHONY : filter/pass_through.cpp.s
+
+filter/voxel_grid.o: filter/voxel_grid.cpp.o
+
+.PHONY : filter/voxel_grid.o
+
+# target to build an object file
+filter/voxel_grid.cpp.o:
+	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/filter/voxel_grid.cpp.o
+.PHONY : filter/voxel_grid.cpp.o
+
+filter/voxel_grid.i: filter/voxel_grid.cpp.i
+
+.PHONY : filter/voxel_grid.i
+
+# target to preprocess a source file
+filter/voxel_grid.cpp.i:
+	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/filter/voxel_grid.cpp.i
+.PHONY : filter/voxel_grid.cpp.i
+
+filter/voxel_grid.s: filter/voxel_grid.cpp.s
+
+.PHONY : filter/voxel_grid.s
+
+# target to generate assembly for a file
+filter/voxel_grid.cpp.s:
+	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/filter/voxel_grid.cpp.s
+.PHONY : filter/voxel_grid.cpp.s
 
 kmeans/kmeans.o: kmeans/kmeans.cpp.o
 
@@ -223,6 +263,7 @@ utils/pcd_viewer.o: utils/pcd_viewer.cpp.o
 
 # target to build an object file
 utils/pcd_viewer.cpp.o:
+	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/utils/pcd_viewer.cpp.o
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/utils/pcd_viewer.cpp.o
 .PHONY : utils/pcd_viewer.cpp.o
 
@@ -232,6 +273,7 @@ utils/pcd_viewer.i: utils/pcd_viewer.cpp.i
 
 # target to preprocess a source file
 utils/pcd_viewer.cpp.i:
+	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/utils/pcd_viewer.cpp.i
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/utils/pcd_viewer.cpp.i
 .PHONY : utils/pcd_viewer.cpp.i
 
@@ -241,6 +283,7 @@ utils/pcd_viewer.s: utils/pcd_viewer.cpp.s
 
 # target to generate assembly for a file
 utils/pcd_viewer.cpp.s:
+	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/utils/pcd_viewer.cpp.s
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/utils/pcd_viewer.cpp.s
 .PHONY : utils/pcd_viewer.cpp.s
 
@@ -252,11 +295,15 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
+	@echo "... voxelgrid"
 	@echo "... filter"
 	@echo "... kmeans"
 	@echo "... filter/pass_through.o"
 	@echo "... filter/pass_through.i"
 	@echo "... filter/pass_through.s"
+	@echo "... filter/voxel_grid.o"
+	@echo "... filter/voxel_grid.i"
+	@echo "... filter/voxel_grid.s"
 	@echo "... kmeans/kmeans.o"
 	@echo "... kmeans/kmeans.i"
 	@echo "... kmeans/kmeans.s"
