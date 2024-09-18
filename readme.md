@@ -24,7 +24,9 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
     - [多通道输入输出](#多通道输入输出)
   - [Transformer](#transformer)
   - [注意力机制](#注意力机制)
-- [3D 语义分割](#3d-语义分割)
+- [点云语义分割](#点云语义分割)
+  - [Point Net](#point-net)
+  - [Point Net++](#point-net-1)
 - [点云补全](#点云补全)
   - [AnchorFormer](#anchorformer)
     - [Anchor Generation](#anchor-generation)
@@ -230,12 +232,57 @@ mask 作用是防止 t 时刻看到以后的东西
 **向量注意力：**
 其中每个注意力权重是一个向量，在更细粒度的水平上对不同的维度进行加权
 
-#  3D 语义分割
-<!-- ![alt text](image.png)'= -->
-<!-- ![alt text](image-1.png) -->
+#  点云语义分割
+![alt text](note_pic/image.png)
+![alt text](note_pic/image-1.png)
 
 分类 目标检测 语义分割 区别
 语义分割给每个像素一个 label
+
+## Point Net
+在 Point Net 之前，将点云转换为栅格，用 3D CNN 处理，但是分辨率降低；或使用投影的方法，用 2D CNN 处理。
+
+对于点云数据，**网络输入是无序的** 且 **不同视角结果应该是一样的**
+
+对于无序数据，对称函数不用在意输入数据的顺序，比如 max 函数，point net 的核心思想是构造一个复合函数，其中一层是对称函数，整个网络也就是对称函数
+
+<img src="note_pic/11.png"  width="800" />
+
+分类网络：
+1. 输入点云通过一个 input transform 转换视角，T-Net 为 3*3 的矩阵，与输入进行矩阵乘法，得到的还是n*3 的矩阵
+2. 每个点通过同一个 mlp 扩展维度，3维到64维
+3. 再通过一个特征转换视角的模块（Point Net++ 去掉了）
+4. 通过 mlp 升维到 1024 维，n * 1024
+5. 经过一个 max pool 得到 1*1024 的向量
+6. 通过一个 mlp 变成 k 维，1*k 表示这组点云在每一个类别上的得分
+
+<img src="note_pic/12.png"  width="800" />
+分割网络（每个点都有 k 个得分）：
+
+1. 将每个点的局部特征和全局特征拼接在一起，变成了 n*(64 + 1024)
+2. 进行 mlp 变成 1088 维，再通过 mlp 变成 n*m 的得分
+
+**从 global feature 可以获得点云的 critical points**
+
+## Point Net++
+Point Net 中，一个点自己经过mlp扩展特征维度，Point Net++通过点与其周围的点进行扩展维度
+
+<img src="note_pic/13.png"  width="500" />
+
+**sampling -> grouping -> pointnet**
+
+sampling: uniform sampling, FPS
+
+grouping: KNN, Ball query
+
+<img src="note_pic/14.png"  width="700" />
+
+1. 对点云进行采样与聚合，经过一个 point net 点数量减少，特征维度增加
+2. 再进行上面的过程，获得红色的数据
+3. 分类：红色的全局特征经过point net 和 mlp 得到分类得分
+4. 分割：红色的全局特征经过插值，再与之前蓝色的数据进行拼接，经过point net再插值拼接，获得每个点的得分
+
+在 Point Net++ 中，grouping 环节受到点密度的影响，离激光雷达近的地方点密度大，远的地方密度小，在远的地方用球采样，可能导致球里面点很少，影响特征提取。文章中提出 MSG 和 MRG 解决，MSG 在同一级别上用不同大小的半径提取特征，并进行拼接；MRG 在不同级别上提取特征进行拼接。
 
 # 点云补全
 ## AnchorFormer
