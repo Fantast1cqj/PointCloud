@@ -47,6 +47,7 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
   - [SeedFormer](#seedformer)
     - [Architecture Overview](#architecture-overview)
     - [Point Cloud Completion with Patch Seeds](#point-cloud-completion-with-patch-seeds)
+    - [确定一个 seedformer 测试集](#确定一个-seedformer-测试集)
   - [PointAttN](#pointattn)
   - [WalkFormer](#walkformer)
     - [Point Walk](#point-walk)
@@ -447,6 +448,10 @@ p <sub>i</sub> 和 p <sub>j</sub> 为三维坐标，编码函数 θ 是一个具
 
 由种子坐标 S 和特征 F 组成，每个种子覆盖该点周围的一个小区域
 
+
+### 确定一个 seedformer 测试集
+
+ShapeNet-55 的数据格式：(8192, 3)，将 ShapeNet-55 test.txt 中的数据弄成 partial points (2048, 3)
 
 ## PointAttN
 
