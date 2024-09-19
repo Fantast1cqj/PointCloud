@@ -2,6 +2,13 @@
 <link rel="stylesheet" type="text/css" href="auto-number-title.css" />
 
 Markdown 教程：https://markdown.com.cn/basic-syntax/
+- [PCL](#pcl)
+  - [filter](#filter)
+    - [pass through](#pass-through)
+    - [voxel grid](#voxel-grid)
+  - [PCA](#pca)
+    - [normals](#normals)
+    - [点云 PCA](#点云-pca)
 - [Lidar 运动补偿](#lidar-运动补偿)
   - [点云预处理](#点云预处理)
   - [使用 IMU 进行补偿](#使用-imu-进行补偿)
@@ -45,6 +52,47 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
     - [Point Walk](#point-walk)
   - [Zero-shot](#zero-shot)
     - [Point Cloud Colorization：](#point-cloud-colorization)
+
+# PCL
+
+## filter
+
+### pass through
+code: [pass_through.cpp](src/PCL_learn/filter/pass_through.cpp)
+
+PCL 直通滤波器 pcl::PassThrough\<pcl::PointXYZ\> filter, 对坐标某一范围内进行去除或保留
+
+### voxel grid
+code: [voxel_grid.cpp](src/PCL_learn/filter/voxel_grid.cpp)
+
+1. 创建 voxel gird 进行下采样，用体素 **重心** 近似体素内的其他点，比体素中心更慢，但是表示曲面更准确
+2. Approximate Voxel Grid （使用体素中心）
+3. 改进 Voxel Grid，使用原始点云距离重心最近的点作为下采样的点
+
+## PCA
+### normals
+code: [normals.cpp](src/PCL_learn/pca/normals.cpp)
+
+求点云法向量，遍历点，对于某个点，找这个点的最近邻十个点，将这十个点放入 pca 中得到一个 eigen_vectors，最后一列（最小特征值对应的）为法向量
+
+或使用 pcl::NormalEstimation\<pcl::PointXYZ, pcl::Normal\> 
+
+    method1:
+    pcl::PCA<pcl::PointXYZRGB> pca;
+    pca.setInputCloud(cloud_);
+    Eigen::Matrix3f eigen_vectors = pca.getEigenVectors();
+
+    method2:
+    pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal>
+
+
+
+
+### 点云 PCA
+code: [pca.cpp](src/PCL_learn/pca/pca.cpp)
+
+求点云主成分，特征值最小的对应的向量是法向量，这里是纯 eigen 算，也可以调用 pcl 求
+
 
 
 # Lidar 运动补偿
