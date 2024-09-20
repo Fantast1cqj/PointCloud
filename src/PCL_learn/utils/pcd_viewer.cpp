@@ -21,7 +21,7 @@ void cloud_viewer(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud, u_int8_t mod)
     // 处理 pcl::PointXYZ 类型的点云
     pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer("Viewer"));
     // viewer->addPointCloudNormals<pcl::PointNormal>(cloud, 1, 0.1, "normals");
-    viewer->addPointCloud<pcl::PointXYZ>(cloud, "sample cloud");
+    viewer->addPointCloud<pcl::PointXYZ>(cloud, "sample cloud");  // 加个坐标系
     viewer->addCoordinateSystem(1.0);
     while (!viewer->wasStopped())
     {

@@ -29,6 +29,10 @@ int main(int argc, char** argv)
 
 
 
+
+
+
+
     /****** 过滤得到点的 index ******/
 	pcl::PassThrough<pcl::PointXYZ> pass(true); // 用true初始化将允许我们提取被删除的索引
 	pass.setInputCloud(cloud_input);
@@ -43,18 +47,19 @@ int main(int argc, char** argv)
     pcl::IndicesConstPtr indices_rem;
 	indices_rem = pass.getRemovedIndices(); // 获取被剔除点的索引
 
-    std::cout <<  indices_x.size() << std::endl;    // 
-    std::cout <<  indices_rem->size() << std::endl;
+    std::cout << "x filter: " << indices_x.size() << std::endl;
+    std::cout <<  "x filter rem: " <<indices_rem->size() << std::endl;
 
-	// pcl::IndicesPtr  index_ptr_x = std::make_shared<std::vector<int>>(indices_x);
-
-	// pass.setIndices(index_ptr_x);
-	// pass.setFilterFieldName("z");
-	// pass.setFilterLimits(0.0, 7.0);
-	// pass.setNegative(true);
-
-	// std::vector<int> indices_xz;
-	// pass.filter(indices_xz);
+    /****** 再对 z 轴进行滤波 ******/
+	pcl::IndicesPtr  index_ptr_x = boost::make_shared<std::vector<int>>(indices_x);
+    // pcl::Indices  index_ptr_x = indices_x;
+	pass.setIndices(index_ptr_x);
+	pass.setFilterFieldName("z");
+	pass.setFilterLimits(0.0, 0.1);
+	pass.setNegative(false);
+	std::vector<int> indices_xz;
+	pass.filter(indices_xz);
+    std::cout << "xz filter" << indices_xz.size() << std::endl;
 
 
 }

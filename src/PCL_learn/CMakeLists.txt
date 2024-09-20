@@ -3,12 +3,12 @@ cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 
 # project(pcl_recognition_test)
 # project(txt2pcd)
-
 # project(pca)
-project(kmeans)
+# project(kmeans)
 # project(normals)
 project(filter)
 project(voxelgrid)
+project(indices)
 
 find_package(PCL REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -26,17 +26,20 @@ add_definitions(${PCL_DEFINITIONS})
 # add_executable(txt2pcd src/txt2pcd.cpp)
 
 # add_executable(pca pca/pca.cpp)
-add_executable(kmeans kmeans/kmeans.cpp kmeans/kmeans_main.cpp)
+# add_executable(kmeans kmeans/kmeans.cpp kmeans/kmeans_main.cpp)
 # add_executable(normals utils/pcd_viewer.cpp pca/normals.cpp)
 add_executable(filter filter/pass_through.cpp utils/pcd_viewer.cpp)
 add_executable(voxelgrid filter/voxel_grid.cpp utils/pcd_viewer.cpp)
+add_executable(indices filter/indices.cpp utils/pcd_viewer.cpp)
+
 
 
 # target_link_libraries(pcl_recognition_test ${PCL_LIBRARIES})
 # target_link_libraries(txt2pcd ${PCL_LIBRARIES})
 
 # target_link_libraries(pca ${PCL_LIBRARIES})
-target_link_libraries(kmeans ${PCL_LIBRARIES})
+# target_link_libraries(kmeans ${PCL_LIBRARIES})
 # target_link_libraries(normals ${PCL_LIBRARIES})
 target_link_libraries(filter ${PCL_LIBRARIES})
 target_link_libraries(voxelgrid ${PCL_LIBRARIES})
+target_link_libraries(indices ${PCL_LIBRARIES})

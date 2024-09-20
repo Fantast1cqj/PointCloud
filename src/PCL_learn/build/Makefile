@@ -111,6 +111,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named indices
+
+# Build rule for target.
+indices: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 indices
+.PHONY : indices
+
+# fast build rule for target.
+indices/fast:
+	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/build
+.PHONY : indices/fast
+
+#=============================================================================
 # Target rules for targets named voxelgrid
 
 # Build rule for target.
@@ -136,18 +149,32 @@ filter/fast:
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/build
 .PHONY : filter/fast
 
-#=============================================================================
-# Target rules for targets named kmeans
+filter/indices.o: filter/indices.cpp.o
 
-# Build rule for target.
-kmeans: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 kmeans
-.PHONY : kmeans
+.PHONY : filter/indices.o
 
-# fast build rule for target.
-kmeans/fast:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/build
-.PHONY : kmeans/fast
+# target to build an object file
+filter/indices.cpp.o:
+	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/filter/indices.cpp.o
+.PHONY : filter/indices.cpp.o
+
+filter/indices.i: filter/indices.cpp.i
+
+.PHONY : filter/indices.i
+
+# target to preprocess a source file
+filter/indices.cpp.i:
+	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/filter/indices.cpp.i
+.PHONY : filter/indices.cpp.i
+
+filter/indices.s: filter/indices.cpp.s
+
+.PHONY : filter/indices.s
+
+# target to generate assembly for a file
+filter/indices.cpp.s:
+	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/filter/indices.cpp.s
+.PHONY : filter/indices.cpp.s
 
 filter/pass_through.o: filter/pass_through.cpp.o
 
@@ -203,66 +230,13 @@ filter/voxel_grid.cpp.s:
 	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/filter/voxel_grid.cpp.s
 .PHONY : filter/voxel_grid.cpp.s
 
-kmeans/kmeans.o: kmeans/kmeans.cpp.o
-
-.PHONY : kmeans/kmeans.o
-
-# target to build an object file
-kmeans/kmeans.cpp.o:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.o
-.PHONY : kmeans/kmeans.cpp.o
-
-kmeans/kmeans.i: kmeans/kmeans.cpp.i
-
-.PHONY : kmeans/kmeans.i
-
-# target to preprocess a source file
-kmeans/kmeans.cpp.i:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.i
-.PHONY : kmeans/kmeans.cpp.i
-
-kmeans/kmeans.s: kmeans/kmeans.cpp.s
-
-.PHONY : kmeans/kmeans.s
-
-# target to generate assembly for a file
-kmeans/kmeans.cpp.s:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans/kmeans.cpp.s
-.PHONY : kmeans/kmeans.cpp.s
-
-kmeans/kmeans_main.o: kmeans/kmeans_main.cpp.o
-
-.PHONY : kmeans/kmeans_main.o
-
-# target to build an object file
-kmeans/kmeans_main.cpp.o:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.o
-.PHONY : kmeans/kmeans_main.cpp.o
-
-kmeans/kmeans_main.i: kmeans/kmeans_main.cpp.i
-
-.PHONY : kmeans/kmeans_main.i
-
-# target to preprocess a source file
-kmeans/kmeans_main.cpp.i:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.i
-.PHONY : kmeans/kmeans_main.cpp.i
-
-kmeans/kmeans_main.s: kmeans/kmeans_main.cpp.s
-
-.PHONY : kmeans/kmeans_main.s
-
-# target to generate assembly for a file
-kmeans/kmeans_main.cpp.s:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/kmeans/kmeans_main.cpp.s
-.PHONY : kmeans/kmeans_main.cpp.s
-
 utils/pcd_viewer.o: utils/pcd_viewer.cpp.o
 
 .PHONY : utils/pcd_viewer.o
 
 # target to build an object file
 utils/pcd_viewer.cpp.o:
+	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/utils/pcd_viewer.cpp.o
 	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/utils/pcd_viewer.cpp.o
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/utils/pcd_viewer.cpp.o
 .PHONY : utils/pcd_viewer.cpp.o
@@ -273,6 +247,7 @@ utils/pcd_viewer.i: utils/pcd_viewer.cpp.i
 
 # target to preprocess a source file
 utils/pcd_viewer.cpp.i:
+	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/utils/pcd_viewer.cpp.i
 	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/utils/pcd_viewer.cpp.i
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/utils/pcd_viewer.cpp.i
 .PHONY : utils/pcd_viewer.cpp.i
@@ -283,6 +258,7 @@ utils/pcd_viewer.s: utils/pcd_viewer.cpp.s
 
 # target to generate assembly for a file
 utils/pcd_viewer.cpp.s:
+	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/utils/pcd_viewer.cpp.s
 	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/utils/pcd_viewer.cpp.s
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/utils/pcd_viewer.cpp.s
 .PHONY : utils/pcd_viewer.cpp.s
@@ -295,21 +271,18 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
+	@echo "... indices"
 	@echo "... voxelgrid"
 	@echo "... filter"
-	@echo "... kmeans"
+	@echo "... filter/indices.o"
+	@echo "... filter/indices.i"
+	@echo "... filter/indices.s"
 	@echo "... filter/pass_through.o"
 	@echo "... filter/pass_through.i"
 	@echo "... filter/pass_through.s"
 	@echo "... filter/voxel_grid.o"
 	@echo "... filter/voxel_grid.i"
 	@echo "... filter/voxel_grid.s"
-	@echo "... kmeans/kmeans.o"
-	@echo "... kmeans/kmeans.i"
-	@echo "... kmeans/kmeans.s"
-	@echo "... kmeans/kmeans_main.o"
-	@echo "... kmeans/kmeans_main.i"
-	@echo "... kmeans/kmeans_main.s"
 	@echo "... utils/pcd_viewer.o"
 	@echo "... utils/pcd_viewer.i"
 	@echo "... utils/pcd_viewer.s"

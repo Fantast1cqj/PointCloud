@@ -36,8 +36,8 @@ int main(int argc, char** argv)
     vg.setLeafSize(0.05f, 0.05f, 0.05f);
     vg.filter(*cloud_output);
 
-    std::cout << "input point num: " << cloud_input -> size() << std::endl;
-    std::cout << "output point num: " << cloud_output -> size() << std::endl;
+    // std::cout << "input point num: " << cloud_input -> size() << std::endl;
+    // std::cout << "output point num: " << cloud_output -> size() << std::endl;
     // cloud_viewer(cloud_output, 1);
 
 
@@ -51,8 +51,8 @@ int main(int argc, char** argv)
     avf.setLeafSize(0.01f, 0.01f, 0.01f);// 最小体素的边长
     avf.filter(*cloud_output2);      // 进行滤波
 
-    std::cout << "input point num: " << cloud_input -> size() << std::endl;
-    std::cout << "output point num: " << cloud_output2 -> size() << std::endl;
+    // std::cout << "input point num: " << cloud_input -> size() << std::endl;
+    // std::cout << "output point num: " << cloud_output2 -> size() << std::endl;
     // cloud_viewer(cloud_output2, 1);
 
 
@@ -86,11 +86,25 @@ int main(int argc, char** argv)
     pcl::PointCloud<pcl::PointXYZ>::Ptr final_filtered(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::copyPointCloud(*cloud_input, inds->indices, *final_filtered);
 
+    // std::cout << "input point num: " << cloud_input -> size() << std::endl;
+    // std::cout << "output point num: " << final_filtered -> size() << std::endl;
+
+
+
+
+
+    /**/
+    /****** 设置每个 voxel grid 中最小点数量，如果一个 voxel grid 内点数量大于设定值，则使用 leaf_size，小于设定值，那么这些点将不会被保留在处理后的点云中******/
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output3 (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::VoxelGrid<pcl::PointXYZ> vg2;
+    vg2.setInputCloud(cloud_input);
+    vg2.setLeafSize(0.01f, 0.01f, 0.01f);    // 最小 voxel grid 边长
+    vg2.setMinimumPointsNumberPerVoxel(2); // 设置每一个 voxel grid 内需要包含的最小点个数 
+    vg2.filter(*cloud_output3);
+
     std::cout << "input point num: " << cloud_input -> size() << std::endl;
-    std::cout << "output point num: " << final_filtered -> size() << std::endl;
-
-
-
+    std::cout << "output point num: " << cloud_output3 -> size() << std::endl;
+    cloud_viewer(cloud_output3, 1);
 
     return 0;
 }

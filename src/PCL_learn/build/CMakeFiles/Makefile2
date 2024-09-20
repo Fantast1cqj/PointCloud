@@ -53,9 +53,9 @@ CMAKE_BINARY_DIR = /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
+all: CMakeFiles/indices.dir/all
 all: CMakeFiles/voxelgrid.dir/all
 all: CMakeFiles/filter.dir/all
-all: CMakeFiles/kmeans.dir/all
 
 .PHONY : all
 
@@ -65,11 +65,38 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
+clean: CMakeFiles/indices.dir/clean
 clean: CMakeFiles/voxelgrid.dir/clean
 clean: CMakeFiles/filter.dir/clean
-clean: CMakeFiles/kmeans.dir/clean
 
 .PHONY : clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/indices.dir
+
+# All Build rule for target.
+CMakeFiles/indices.dir/all:
+	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/depend
+	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles --progress-num=4,5,6 "Built target indices"
+.PHONY : CMakeFiles/indices.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/indices.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles 3
+	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/indices.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles 0
+.PHONY : CMakeFiles/indices.dir/rule
+
+# Convenience name for target.
+indices: CMakeFiles/indices.dir/rule
+
+.PHONY : indices
+
+# clean rule for target.
+CMakeFiles/indices.dir/clean:
+	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/clean
+.PHONY : CMakeFiles/indices.dir/clean
 
 #=============================================================================
 # Target rules for target CMakeFiles/voxelgrid.dir
@@ -124,33 +151,6 @@ filter: CMakeFiles/filter.dir/rule
 CMakeFiles/filter.dir/clean:
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/clean
 .PHONY : CMakeFiles/filter.dir/clean
-
-#=============================================================================
-# Target rules for target CMakeFiles/kmeans.dir
-
-# All Build rule for target.
-CMakeFiles/kmeans.dir/all:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/depend
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles --progress-num=4,5,6 "Built target kmeans"
-.PHONY : CMakeFiles/kmeans.dir/all
-
-# Build rule for subdir invocation for target.
-CMakeFiles/kmeans.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles 3
-	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/kmeans.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build/CMakeFiles 0
-.PHONY : CMakeFiles/kmeans.dir/rule
-
-# Convenience name for target.
-kmeans: CMakeFiles/kmeans.dir/rule
-
-.PHONY : kmeans
-
-# clean rule for target.
-CMakeFiles/kmeans.dir/clean:
-	$(MAKE) -f CMakeFiles/kmeans.dir/build.make CMakeFiles/kmeans.dir/clean
-.PHONY : CMakeFiles/kmeans.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.
