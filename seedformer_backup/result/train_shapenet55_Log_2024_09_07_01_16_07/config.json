@@ -1,0 +1,47 @@
+{
+    "CONST": {
+        "DEVICE": "0, 1, 2, 3, 4, 5, 6, 7",
+        "NUM_WORKERS": 8,
+        "N_INPUT_POINTS": 2048
+    },
+    "DATASET": {
+        "TEST_DATASET": "ShapeNet55",
+        "TRAIN_DATASET": "ShapeNet55"
+    },
+    "DATASETS": {
+        "SHAPENET55": {
+            "CATEGORY_FILE_PATH": "./datasets/ShapeNet55-34/ShapeNet-55/",
+            "COMPLETE_POINTS_PATH": "/home/ps/wcw_1999/datasets/ShapeNet55/shapenet_pc/%s",
+            "N_POINTS": 2048
+        }
+    },
+    "DIR": {
+        "CHECKPOINTS": "../results/train_shapenet55_Log_2024_09_07_01_16_07/checkpoints",
+        "LOGS": "../results/train_shapenet55_Log_2024_09_07_01_16_07",
+        "OUT_PATH": "../results/train_shapenet55_Log_2024_09_07_01_16_07",
+        "TEST_PATH": "../test"
+    },
+    "NETWORK": {
+        "UPSAMPLE_FACTORS": [
+            1,
+            4,
+            4
+        ]
+    },
+    "TEST": {
+        "METRIC_NAME": "ChamferDistance"
+    },
+    "TRAIN": {
+        "BATCH_SIZE": 48,
+        "BETAS": [
+            0.9,
+            0.999
+        ],
+        "GAMMA": 0.5,
+        "LEARNING_RATE": 0.001,
+        "LR_DECAY": 100,
+        "N_EPOCHS": 400,
+        "WARMUP_EPOCHS": 20,
+        "WEIGHT_DECAY": 0
+    }
+}
