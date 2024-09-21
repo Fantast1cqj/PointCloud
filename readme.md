@@ -35,6 +35,7 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
   - [Point Net](#point-net)
   - [Point Net++](#point-net-1)
 - [点云补全](#点云补全)
+  - [partial to complete](#partial-to-complete)
   - [AnchorFormer](#anchorformer)
     - [Anchor Generation](#anchor-generation)
     - [Anchor Scattering](#anchor-scattering)
@@ -339,6 +340,11 @@ grouping: KNN, Ball query
 在分割任务中，需要恢复点的数量，找要恢复的点最近的三个上层点，使用距离的倒数作为权重进行插值，再将原来的特征拼接再后面
 
 # 点云补全
+## partial to complete
+[VQ VAE](https://zhuanlan.zhihu.com/p/633744455)
+
+问题：模型推理的过程中，VQ VAE解码器的输入是什么
+
 ## AnchorFormer
 传统方法：输入点云 --> 全局特征向量 --> 稠密点云 **池化操作会导致点云细节缺失**
 
