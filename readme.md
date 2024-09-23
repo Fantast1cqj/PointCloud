@@ -343,6 +343,8 @@ grouping: KNN, Ball query
 ## partial to complete
 [VQ VAE](https://zhuanlan.zhihu.com/p/633744455)
 
+[VAE](https://zhuanlan.zhihu.com/p/574208925)
+
 问题：模型推理的过程中，VQ VAE解码器的输入是什么
 
 ## AnchorFormer
