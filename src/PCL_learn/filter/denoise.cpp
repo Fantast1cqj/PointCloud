@@ -48,6 +48,11 @@ int main(int argc, char** argv)
     cloud_viewer(filter1_output, 1);
 
 
+    /****** Gaussian 滤波器 ******/
+    // https://blog.csdn.net/qq_36686437/article/details/114160482
+    // https://blog.csdn.net/Man_1man/article/details/130167933
+
+
 
     return 0;
 }
