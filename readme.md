@@ -4,8 +4,9 @@
 Markdown 教程：https://markdown.com.cn/basic-syntax/
 - [PCL](#pcl)
   - [filter](#filter)
-    - [pass through](#pass-through)
-    - [voxel grid](#voxel-grid)
+    - [pass through 直通滤波器](#pass-through-直通滤波器)
+    - [voxel grid 体素滤波器](#voxel-grid-体素滤波器)
+    - [indices 索引提取](#indices-索引提取)
   - [PCA](#pca)
     - [normals](#normals)
     - [点云 PCA](#点云-pca)
@@ -59,17 +60,35 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
 
 ## filter
 
-### pass through
+### pass through 直通滤波器
 code: [pass_through.cpp](src/PCL_learn/filter/pass_through.cpp)
 
 PCL 直通滤波器 pcl::PassThrough\<pcl::PointXYZ\> filter, 对坐标某一范围内进行去除或保留
 
-### voxel grid
+### voxel grid 体素滤波器
 code: [voxel_grid.cpp](src/PCL_learn/filter/voxel_grid.cpp)
 
 1. 创建 voxel gird 进行下采样，用体素 **重心** 近似体素内的其他点，比体素中心更慢，但是表示曲面更准确
 2. Approximate Voxel Grid （使用体素中心）
 3. 改进 Voxel Grid，使用原始点云距离重心最近的点作为下采样的点
+
+###  indices 索引提取
+code: [indices.cpp](src/PCL_learn/filter/indices.cpp)
+
+根据点云索引对点进行提取
+
+    pcl::PointIndices indices;
+    uint16_t i = 0;
+    for(i = 0; i < 50; i++)
+    {
+        indices.indices.push_back(i);
+    }
+
+    pcl::ExtractIndices<pcl::PointXYZ> extr; // 索引提取器
+    extr.setInputCloud(cloud_input);           // 设置输入点云
+    extr.setIndices(boost::make_shared<const pcl::PointIndices>(indices)); // 设置索引 创建一个共享智能指针
+    extr.filter(*cloud_output);     // 提取出 indices 中的点云
+
 
 ## PCA
 ### normals

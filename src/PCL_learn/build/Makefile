@@ -56,17 +56,6 @@ CMAKE_BINARY_DIR = /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build
 #=============================================================================
 # Targets provided globally by CMake.
 
-# Special rule for the target rebuild_cache
-rebuild_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/usr/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : rebuild_cache
-
-# Special rule for the target rebuild_cache
-rebuild_cache/fast: rebuild_cache
-
-.PHONY : rebuild_cache/fast
-
 # Special rule for the target edit_cache
 edit_cache:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "No interactive CMake dialog available..."
@@ -77,6 +66,17 @@ edit_cache:
 edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
+
+# Special rule for the target rebuild_cache
+rebuild_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
+	/usr/bin/cmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : rebuild_cache
+
+# Special rule for the target rebuild_cache
+rebuild_cache/fast: rebuild_cache
+
+.PHONY : rebuild_cache/fast
 
 # The main all target
 all: cmake_check_build_system
@@ -109,6 +109,19 @@ preinstall/fast:
 depend:
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
+
+#=============================================================================
+# Target rules for targets named denoise
+
+# Build rule for target.
+denoise: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 denoise
+.PHONY : denoise
+
+# fast build rule for target.
+denoise/fast:
+	$(MAKE) -f CMakeFiles/denoise.dir/build.make CMakeFiles/denoise.dir/build
+.PHONY : denoise/fast
 
 #=============================================================================
 # Target rules for targets named indices
@@ -148,6 +161,33 @@ filter: cmake_check_build_system
 filter/fast:
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/build
 .PHONY : filter/fast
+
+filter/denoise.o: filter/denoise.cpp.o
+
+.PHONY : filter/denoise.o
+
+# target to build an object file
+filter/denoise.cpp.o:
+	$(MAKE) -f CMakeFiles/denoise.dir/build.make CMakeFiles/denoise.dir/filter/denoise.cpp.o
+.PHONY : filter/denoise.cpp.o
+
+filter/denoise.i: filter/denoise.cpp.i
+
+.PHONY : filter/denoise.i
+
+# target to preprocess a source file
+filter/denoise.cpp.i:
+	$(MAKE) -f CMakeFiles/denoise.dir/build.make CMakeFiles/denoise.dir/filter/denoise.cpp.i
+.PHONY : filter/denoise.cpp.i
+
+filter/denoise.s: filter/denoise.cpp.s
+
+.PHONY : filter/denoise.s
+
+# target to generate assembly for a file
+filter/denoise.cpp.s:
+	$(MAKE) -f CMakeFiles/denoise.dir/build.make CMakeFiles/denoise.dir/filter/denoise.cpp.s
+.PHONY : filter/denoise.cpp.s
 
 filter/indices.o: filter/indices.cpp.o
 
@@ -236,6 +276,7 @@ utils/pcd_viewer.o: utils/pcd_viewer.cpp.o
 
 # target to build an object file
 utils/pcd_viewer.cpp.o:
+	$(MAKE) -f CMakeFiles/denoise.dir/build.make CMakeFiles/denoise.dir/utils/pcd_viewer.cpp.o
 	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/utils/pcd_viewer.cpp.o
 	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/utils/pcd_viewer.cpp.o
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/utils/pcd_viewer.cpp.o
@@ -247,6 +288,7 @@ utils/pcd_viewer.i: utils/pcd_viewer.cpp.i
 
 # target to preprocess a source file
 utils/pcd_viewer.cpp.i:
+	$(MAKE) -f CMakeFiles/denoise.dir/build.make CMakeFiles/denoise.dir/utils/pcd_viewer.cpp.i
 	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/utils/pcd_viewer.cpp.i
 	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/utils/pcd_viewer.cpp.i
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/utils/pcd_viewer.cpp.i
@@ -258,6 +300,7 @@ utils/pcd_viewer.s: utils/pcd_viewer.cpp.s
 
 # target to generate assembly for a file
 utils/pcd_viewer.cpp.s:
+	$(MAKE) -f CMakeFiles/denoise.dir/build.make CMakeFiles/denoise.dir/utils/pcd_viewer.cpp.s
 	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/utils/pcd_viewer.cpp.s
 	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/utils/pcd_viewer.cpp.s
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/utils/pcd_viewer.cpp.s
@@ -269,11 +312,15 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
-	@echo "... rebuild_cache"
 	@echo "... edit_cache"
+	@echo "... rebuild_cache"
+	@echo "... denoise"
 	@echo "... indices"
 	@echo "... voxelgrid"
 	@echo "... filter"
+	@echo "... filter/denoise.o"
+	@echo "... filter/denoise.i"
+	@echo "... filter/denoise.s"
 	@echo "... filter/indices.o"
 	@echo "... filter/indices.i"
 	@echo "... filter/indices.s"

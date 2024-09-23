@@ -184,7 +184,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=indices
+CMAKE_PROJECT_NAME:STATIC=denoise
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/usr/bin/ranlib
@@ -493,6 +493,12 @@ USB_10_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libusb-1.0.so
 
 //The directory containing VTKConfig.cmake
 VTK_DIR:PATH=/usr/lib/cmake/vtk-7.1
+
+//Value Computed by CMake
+denoise_BINARY_DIR:STATIC=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build
+
+//Value Computed by CMake
+denoise_SOURCE_DIR:STATIC=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn
 
 //Value Computed by CMake
 filter_BINARY_DIR:STATIC=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build
