@@ -37,6 +37,7 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
   - [Point Net++](#point-net-1)
 - [点云补全](#点云补全)
   - [partial to complete](#partial-to-complete)
+  - [配 EditVAE 环境](#配-editvae-环境)
   - [AnchorFormer](#anchorformer)
     - [Anchor Generation](#anchor-generation)
     - [Anchor Scattering](#anchor-scattering)
@@ -360,11 +361,36 @@ grouping: KNN, Ball query
 
 # 点云补全
 ## partial to complete
-[VQ VAE](https://zhuanlan.zhihu.com/p/633744455)
+[VQ VAE 介绍](https://zhuanlan.zhihu.com/p/633744455)
 
-[VAE](https://zhuanlan.zhihu.com/p/574208925)
+[VAE 介绍](https://zhuanlan.zhihu.com/p/574208925)
 
 问题：模型推理的过程中，VQ VAE解码器的输入是什么
+
+## 配 EditVAE 环境
+conda 环境名：editvae2
+
+1. 安装 [PyTorchEMD](https://github.com/daerduoCarey/PyTorchEMD)
+  
+   环境配置：torch version: 1.13.0+cu117      CUDA version: 11.7
+   
+   在 cuda/emd_kernel.cu 中：
+   
+   1. 注释掉 #include <THC/THC.h> 
+   
+   2. Replace all THCudaCheck with C10_CUDA_CHECK
+   
+   3. CHECK_EQ(a, b); -> TORCH_CHECK_EQ(a, b);
+   
+   4. AT_CHECK(a == b, "Error message"); -> TORCH_CHECK(a == b, "Error message");
+
+    编译的时候使用 python setup.py install 报错 没有权限，sudo python setup.py install 也不行，没有命令，使用 sudo python3 setup.py install 报错没有 torch，原因是 sudo 用的 base 的环境，不是自己的 conda 环境。最后使用 sudo -E python3 setup.py install 成功编译，sudo -E 保留当前用户的环境变量
+
+    配置完 PyTorchEMD 并通过测试
+
+
+
+
 
 ## AnchorFormer
 传统方法：输入点云 --> 全局特征向量 --> 稠密点云 **池化操作会导致点云细节缺失**
