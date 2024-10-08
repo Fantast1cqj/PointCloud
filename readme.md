@@ -388,6 +388,15 @@ conda 环境名：editvae2
 
     配置完 PyTorchEMD 并通过测试
 
+2. 装完之后要将 emd_cuda.cpython-37m-x86_64-linux-gnu.so 文件放在 utils 下，一定要用 python3.7 编译PyTorchEMD， 后面发现还有一个库 fast_sampler 是用 python3.7 完成编译的。
+但是使用 sudo -E python3 setup.py install 编译python环境又变成了 3.8，应该使用 ：   
+      sudo -E /home/ps/anaconda3/envs/editvae_3.7/bin/python3.7 setup.py install
+3. 报错：
+
+   <img src="note_pic/16.png"  width="700" />
+
+   measurement.py 473行 gts = np.concatenate((gts, gt), axis=1) 有 bug，直接注释了
+
 
 
 
