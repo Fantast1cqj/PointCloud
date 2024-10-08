@@ -124,6 +124,19 @@ denoise/fast:
 .PHONY : denoise/fast
 
 #=============================================================================
+# Target rules for targets named RANSAC_line
+
+# Build rule for target.
+RANSAC_line: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 RANSAC_line
+.PHONY : RANSAC_line
+
+# fast build rule for target.
+RANSAC_line/fast:
+	$(MAKE) -f CMakeFiles/RANSAC_line.dir/build.make CMakeFiles/RANSAC_line.dir/build
+.PHONY : RANSAC_line/fast
+
+#=============================================================================
 # Target rules for targets named indices
 
 # Build rule for target.
@@ -161,6 +174,33 @@ filter: cmake_check_build_system
 filter/fast:
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/build
 .PHONY : filter/fast
+
+RANSAC/line.o: RANSAC/line.cpp.o
+
+.PHONY : RANSAC/line.o
+
+# target to build an object file
+RANSAC/line.cpp.o:
+	$(MAKE) -f CMakeFiles/RANSAC_line.dir/build.make CMakeFiles/RANSAC_line.dir/RANSAC/line.cpp.o
+.PHONY : RANSAC/line.cpp.o
+
+RANSAC/line.i: RANSAC/line.cpp.i
+
+.PHONY : RANSAC/line.i
+
+# target to preprocess a source file
+RANSAC/line.cpp.i:
+	$(MAKE) -f CMakeFiles/RANSAC_line.dir/build.make CMakeFiles/RANSAC_line.dir/RANSAC/line.cpp.i
+.PHONY : RANSAC/line.cpp.i
+
+RANSAC/line.s: RANSAC/line.cpp.s
+
+.PHONY : RANSAC/line.s
+
+# target to generate assembly for a file
+RANSAC/line.cpp.s:
+	$(MAKE) -f CMakeFiles/RANSAC_line.dir/build.make CMakeFiles/RANSAC_line.dir/RANSAC/line.cpp.s
+.PHONY : RANSAC/line.cpp.s
 
 filter/denoise.o: filter/denoise.cpp.o
 
@@ -277,6 +317,7 @@ utils/pcd_viewer.o: utils/pcd_viewer.cpp.o
 # target to build an object file
 utils/pcd_viewer.cpp.o:
 	$(MAKE) -f CMakeFiles/denoise.dir/build.make CMakeFiles/denoise.dir/utils/pcd_viewer.cpp.o
+	$(MAKE) -f CMakeFiles/RANSAC_line.dir/build.make CMakeFiles/RANSAC_line.dir/utils/pcd_viewer.cpp.o
 	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/utils/pcd_viewer.cpp.o
 	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/utils/pcd_viewer.cpp.o
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/utils/pcd_viewer.cpp.o
@@ -289,6 +330,7 @@ utils/pcd_viewer.i: utils/pcd_viewer.cpp.i
 # target to preprocess a source file
 utils/pcd_viewer.cpp.i:
 	$(MAKE) -f CMakeFiles/denoise.dir/build.make CMakeFiles/denoise.dir/utils/pcd_viewer.cpp.i
+	$(MAKE) -f CMakeFiles/RANSAC_line.dir/build.make CMakeFiles/RANSAC_line.dir/utils/pcd_viewer.cpp.i
 	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/utils/pcd_viewer.cpp.i
 	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/utils/pcd_viewer.cpp.i
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/utils/pcd_viewer.cpp.i
@@ -301,6 +343,7 @@ utils/pcd_viewer.s: utils/pcd_viewer.cpp.s
 # target to generate assembly for a file
 utils/pcd_viewer.cpp.s:
 	$(MAKE) -f CMakeFiles/denoise.dir/build.make CMakeFiles/denoise.dir/utils/pcd_viewer.cpp.s
+	$(MAKE) -f CMakeFiles/RANSAC_line.dir/build.make CMakeFiles/RANSAC_line.dir/utils/pcd_viewer.cpp.s
 	$(MAKE) -f CMakeFiles/indices.dir/build.make CMakeFiles/indices.dir/utils/pcd_viewer.cpp.s
 	$(MAKE) -f CMakeFiles/voxelgrid.dir/build.make CMakeFiles/voxelgrid.dir/utils/pcd_viewer.cpp.s
 	$(MAKE) -f CMakeFiles/filter.dir/build.make CMakeFiles/filter.dir/utils/pcd_viewer.cpp.s
@@ -315,9 +358,13 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... denoise"
+	@echo "... RANSAC_line"
 	@echo "... indices"
 	@echo "... voxelgrid"
 	@echo "... filter"
+	@echo "... RANSAC/line.o"
+	@echo "... RANSAC/line.i"
+	@echo "... RANSAC/line.s"
 	@echo "... filter/denoise.o"
 	@echo "... filter/denoise.i"
 	@echo "... filter/denoise.s"

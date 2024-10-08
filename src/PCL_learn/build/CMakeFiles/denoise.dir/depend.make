@@ -238,6 +238,7 @@ CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/common/im
 CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/common/impl/projection_matrix.hpp
 CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/common/impl/transforms.hpp
 CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/common/io.h
+CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/common/point_operators.h
 CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/common/point_tests.h
 CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/common/projection_matrix.h
 CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/common/time.h
@@ -247,8 +248,10 @@ CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/conversio
 CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/correspondence.h
 CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/exceptions.h
 CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/filters/boost.h
+CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/filters/convolution_3d.h
 CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/filters/filter.h
 CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/filters/filter_indices.h
+CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/filters/impl/convolution_3d.hpp
 CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/filters/impl/filter.hpp
 CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/filters/impl/filter_indices.hpp
 CMakeFiles/denoise.dir/filter/denoise.cpp.o: /usr/include/pcl-1.10/pcl/filters/impl/radius_outlier_removal.hpp

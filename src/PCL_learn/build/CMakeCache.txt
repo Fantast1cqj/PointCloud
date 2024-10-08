@@ -184,7 +184,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=denoise
+CMAKE_PROJECT_NAME:STATIC=RANSAC_line
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/usr/bin/ranlib
@@ -484,6 +484,12 @@ QHULL_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libqhull.so
 
 //Path to a library.
 QHULL_LIBRARY_DEBUG:FILEPATH=/usr/lib/x86_64-linux-gnu/libqhull.so
+
+//Value Computed by CMake
+RANSAC_line_BINARY_DIR:STATIC=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/build
+
+//Value Computed by CMake
+RANSAC_line_SOURCE_DIR:STATIC=/home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn
 
 //Path to a file.
 USB_10_INCLUDE_DIR:PATH=/usr/include

@@ -9,14 +9,19 @@
 #include <pcl/common/time.h>
 #include <pcl/filters/radius_outlier_removal.h>  //半径滤波器
 #include <pcl/filters/statistical_outlier_removal.h> // 统计滤波
+#include <pcl/filters/convolution_3d.h>  // 高斯滤波
 #include "../utils/pcd_viewer.h"
 
 int main(int argc, char** argv)
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input_2 (new pcl::PointCloud<pcl::PointXYZ>);
+
     pcl::PointCloud<pcl::PointXYZ>::Ptr radius_output (new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr filter1_output (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr gassFilter_output(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::io::loadPCDFile("airplane_0002.pcd",*cloud_input);
+    pcl::io::loadPCDFile("rabbit_GS.pcd",*cloud_input_2);
 
     /****** 点云半径滤波 ******/
     pcl::StopWatch time;
@@ -45,17 +50,38 @@ int main(int argc, char** argv)
     std::cout << "input: " << cloud_input ->size() << std::endl;
     std::cout << "output: " << filter1_output ->size() << std::endl;
     std::cout << "time: " << time.getTime() << std::endl;
-    cloud_viewer(filter1_output, 1);
+    // cloud_viewer(filter1_output, 1);
+
+
+
+
 
 
     /****** Gaussian 滤波器 ******/
+    // 对每个点周围的点乘一个 Gaussian 权重
     // https://blog.csdn.net/qq_36686437/article/details/114160482
     // https://blog.csdn.net/Man_1man/article/details/130167933
 
+    // 设置 Gaussian Kernel
+    pcl::filters::GaussianKernel<pcl::PointXYZ, pcl::PointXYZ> kernel;
+    kernel.setSigma(4);       // Gaussian 标准差，决定函数的宽度
+    kernel.setThresholdRelativeToSigma(4); // 考虑 4*Sigma 以内的点
+    kernel.setThreshold(0.5);    // 平cloud_input滑过程中考虑的点的最大距离（欧式距离） 超过 0.05 不在考虑范围 
+
+    // 设置 kdtree
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr kdtree (new pcl::search::KdTree<pcl::PointXYZ>);
+    kdtree -> setInputCloud(cloud_input);
+
+    // 设置 convolution
+    pcl::filters::Convolution3D<pcl::PointXYZ, pcl::PointXYZ, pcl::filters::GaussianKernel<pcl::PointXYZ, pcl::PointXYZ>> convolution;
+    convolution.setKernel(kernel);
+    convolution.setInputCloud(cloud_input);
+    convolution.setNumberOfThreads(8);   // 8 线程进行卷积
+    convolution.setSearchMethod(kdtree);
+    convolution.setRadiusSearch(0.5);
+    convolution.convolve(*gassFilter_output);
+    cloud_viewer(cloud_input, 1);
 
 
     return 0;
 }
-
-
-

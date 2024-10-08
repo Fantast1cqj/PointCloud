@@ -19,6 +19,8 @@ pcl/filters/radius_outlier_removal.h
 -
 pcl/filters/statistical_outlier_removal.h
 -
+pcl/filters/convolution_3d.h
+-
 ../utils/pcd_viewer.h
 /home/fqj/PointCloud_ws/src/PointCloud/src/PCL_learn/utils/pcd_viewer.h
 
@@ -1364,6 +1366,8 @@ locale
 pcl/common/impl/io.hpp
 -
 
+/usr/include/pcl-1.10/pcl/common/point_operators.h
+
 /usr/include/pcl-1.10/pcl/common/point_tests.h
 pcl/point_types.h
 -
@@ -1472,6 +1476,16 @@ boost/fusion/sequence/intrinsic/at_key.hpp
 boost/optional.hpp
 -
 
+/usr/include/pcl-1.10/pcl/filters/convolution_3d.h
+pcl/pcl_base.h
+-
+pcl/filters/boost.h
+-
+pcl/search/pcl_search.h
+-
+pcl/filters/impl/convolution_3d.hpp
+-
+
 /usr/include/pcl-1.10/pcl/filters/filter.h
 pcl/pcl_base.h
 -
@@ -1492,6 +1506,14 @@ pcl/filters/impl/filter.hpp
 pcl/filters/filter.h
 -
 pcl/filters/impl/filter_indices.hpp
+-
+
+/usr/include/pcl-1.10/pcl/filters/impl/convolution_3d.hpp
+pcl/pcl_config.h
+-
+pcl/point_types.h
+-
+pcl/common/point_operators.h
 -
 
 /usr/include/pcl-1.10/pcl/filters/impl/filter.hpp

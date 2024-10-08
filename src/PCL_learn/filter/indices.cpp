@@ -15,7 +15,7 @@ int main(int argc, char** argv)
 
     /****** 添加索引 ******/
     pcl::PointIndicesPtr inds(new pcl::PointIndices);  // 也可以用智能指针
-    // pcl::PointIndices indices;
+    // pcl::PointIndices indices;   // 配合 29 行使用
     uint16_t i = 0;
     for(i = 0; i < 50; i++)
     {
