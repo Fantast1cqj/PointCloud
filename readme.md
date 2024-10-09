@@ -3,10 +3,13 @@
 
 Markdown 教程：https://markdown.com.cn/basic-syntax/
 - [PCL](#pcl)
-  - [filter](#filter)
+  - [Filter](#filter)
     - [pass through 直通滤波器](#pass-through-直通滤波器)
     - [voxel grid 体素滤波器](#voxel-grid-体素滤波器)
     - [indices 索引提取](#indices-索引提取)
+    - [denoise 去除噪声](#denoise-去除噪声)
+  - [RANSAC (Random sample consensus)](#ransac-random-sample-consensus)
+    - [拟合直线](#拟合直线)
   - [PCA](#pca)
     - [normals](#normals)
     - [点云 PCA](#点云-pca)
@@ -59,7 +62,7 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
 
 # PCL
 
-## filter
+## Filter
 
 ### pass through 直通滤波器
 code: [pass_through.cpp](src/PCL_learn/filter/pass_through.cpp)
@@ -90,6 +93,22 @@ code: [indices.cpp](src/PCL_learn/filter/indices.cpp)
     extr.setIndices(boost::make_shared<const pcl::PointIndices>(indices)); // 设置索引 创建一个共享智能指针
     extr.filter(*cloud_output);     // 提取出 indices 中的点云
 
+### denoise 去除噪声
+
+code: [denoise.cpp](src/PCL_learn/filter/denoise.cpp)
+
+1. 半径滤波：半径 r，点数 n，遍历每个点，点为球心，半径 r，球内点数少于 n，去除该点
+2. 统计滤波：遍历所有点，取某个点周围 k 个点，算 k 个距离，并计算距离的均值和方差，保留 (μ - std * σ, μ + std * σ) 距离内的点
+3. Gaussian 滤波：原理与图像高斯滤波相似，点坐标为周围点坐标的高斯加权
+
+## RANSAC (Random sample consensus)
+
+### 拟合直线
+code: [pass_through.cpp](src/PCL_learn/RANSAC/line.cpp)
+
+最小二乘缺陷：全局最优解，有的数据是噪声，不适合求解
+
+    pcl::SACSegmentation<pcl::PointXYZ> seg;
 
 ## PCA
 ### normals

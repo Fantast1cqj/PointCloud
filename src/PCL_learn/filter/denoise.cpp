@@ -66,7 +66,7 @@ int main(int argc, char** argv)
     pcl::filters::GaussianKernel<pcl::PointXYZ, pcl::PointXYZ> kernel;
     kernel.setSigma(4);       // Gaussian 标准差，决定函数的宽度
     kernel.setThresholdRelativeToSigma(4); // 考虑 4*Sigma 以内的点
-    kernel.setThreshold(0.5);    // 平cloud_input滑过程中考虑的点的最大距离（欧式距离） 超过 0.05 不在考虑范围 
+    kernel.setThreshold(0.5);    // 平滑过程中考虑的点的最大距离（欧式距离） 超过 0.05 不在考虑范围 
 
     // 设置 kdtree
     pcl::search::KdTree<pcl::PointXYZ>::Ptr kdtree (new pcl::search::KdTree<pcl::PointXYZ>);
