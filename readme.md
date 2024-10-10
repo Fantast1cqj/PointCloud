@@ -35,6 +35,7 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
     - [多通道输入输出](#多通道输入输出)
   - [Transformer](#transformer)
   - [注意力机制](#注意力机制)
+  - [一维卷积](#一维卷积)
 - [点云语义分割](#点云语义分割)
   - [Point Net](#point-net)
   - [Point Net++](#point-net-1)
@@ -321,6 +322,17 @@ mask 作用是防止 t 时刻看到以后的东西
 **向量注意力：**
 其中每个注意力权重是一个向量，在更细粒度的水平上对不同的维度进行加权
 
+## 一维卷积
+
+    torch.nn.Conv1d(in_channel, dim, 1)
+
+对一个序列做卷积，当卷积核为 2 时，序列变短了，当卷积核为 1 时，序列长度不变
+
+dim 表示输出的特征维度，相当于一个全连接层，可以进行维度的升高与降低
+
+<img src="note_pic/17.png"  width="350" />
+
+
 #  点云语义分割
 <img src="note_pic/image.png"  width="600" />
 <img src="note_pic/image-1.png"  width="600" />
@@ -338,7 +350,7 @@ mask 作用是防止 t 时刻看到以后的东西
 <img src="note_pic/11.png"  width="800" />
 
 分类网络：
-1. 输入点云通过一个 input transform 转换视角，T-Net 为 3*3 的矩阵，与输入进行矩阵乘法，得到的还是n*3 的矩阵
+1. 输入点云通过一个 input transform 转换视角，T-Net 为 3 * 3 的矩阵，与输入进行矩阵乘法，得到的还是n*3 的矩阵
 2. 每个点通过同一个 mlp 扩展维度，3维到64维
 3. 再通过一个特征转换视角的模块（Point Net++ 去掉了）
 4. 通过 mlp 升维到 1024 维，n * 1024
