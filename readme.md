@@ -323,6 +323,7 @@ mask 作用是防止 t 时刻看到以后的东西
 其中每个注意力权重是一个向量，在更细粒度的水平上对不同的维度进行加权
 
 ## 一维卷积
+https://cloud.tencent.com/developer/article/2061820
 
     torch.nn.Conv1d(in_channel, dim, 1)
 
