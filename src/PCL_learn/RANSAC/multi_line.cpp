@@ -4,39 +4,53 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/radius_outlier_removal.h>
 #include <pcl/segmentation/sac_segmentation.h>
+#include <boost/thread/thread.hpp>
+#include "../utils/pcd_viewer.h"
 
 
 
-void fitMultiLines(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, std::vector<pcl::PointIndices>& models_index,std::vector<pcl::ModelCoefficients>& models_arg, uint16_t line_num)
+void fitMultiLines(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, std::vector<pcl::PointCloud<pcl::PointXYZ>>& models_points, std::vector<pcl::ModelCoefficients>& models_arg, uint16_t models_num)
 {
-	pcl::PointIndices::Ptr Indexes(new pcl::PointIndices);  // 拟合点云的索引
-
+	
+	
     pcl::SACSegmentation<pcl::PointXYZ> seg; // 分割器
 	seg.setOptimizeCoefficients(true);       // 可选择配置，设置模RANSAC型系数需要优化
     seg.setModelType(pcl::SACMODEL_LINE);    // 拟合目标形状 line 
     seg.setMethodType(pcl::SAC_RANSAC);      // 拟合方法：随机采样法
-    seg.setDistanceThreshold(0.05);          // 设置误差容忍范围，也就是阈值，直线模型的 宽度
+    seg.setDistanceThreshold(0.03);          // 设置误差容忍范围，也就是阈值，直线模型的 宽度
     seg.setMaxIterations(500);               // 最大迭代次数，默认迭代50次
+	// pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_copy(cloud_in);
 
 	
-	for(uint16_t i(0); i < line_num; i++)
-	{
+	for(uint16_t i(0); i < models_num; i++)
+	{	
+		pcl::PointIndices::Ptr Indexes(new pcl::PointIndices);  // 拟合点云的索引
 		pcl::PointCloud<pcl::PointXYZ>::Ptr remain (new pcl::PointCloud<pcl::PointXYZ>);
-		pcl::ModelCoefficients::Ptr arg;   // 拟合模型的参数
+		pcl::ModelCoefficients::Ptr arg(new pcl::ModelCoefficients);   // 拟合模型的参数
+		std::cout << "remain points" << cloud_in->size() << std::endl;
 		seg.setInputCloud(cloud_in);  	// input
+
 		seg.segment(*Indexes, *arg);  	// 拟合点云
+
+		std::cout << "size of Indexes" << Indexes->indices.size() << std::endl;
+
+		
 		if(Indexes -> indices.size() > 20)
 		{
-			models_index.push_back(*Indexes);
+		
 			models_arg.push_back(*arg);
-			
+
 			pcl::ExtractIndices<pcl::PointXYZ> extract; // 索引提取器
 			extract.setInputCloud(cloud_in);    // 设置输入点云
 			extract.setIndices(Indexes);        // 设置索引
+			extract.setNegative(false);         // false提取索引内点, true提取外点
+
+    		extract.filter(models_points[i]);   // 模型点坐标
+		
 			extract.setNegative(true);          // true提取拟合模型的外点
 			extract.filter(*remain);
+			cloud_in.swap(remain); //swap 方法会交换两个智能指针所持有的内部对象的所有权，但不会改变它们指向的对象。
 
-			cloud_in.swap(remain);
 		}
 		else
 		{
@@ -54,84 +68,73 @@ void fitMultiLines(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, std::vector<pcl
 
 
 
-int mait(int argc, char** argv)
-{
-	return 0;
-}
-
-
-
-void fitMultipleLines(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, std::vector<pcl::ModelCoefficients>& lineCoff)
-{
-	pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
-	pcl::SACSegmentation<pcl::PointXYZ> seg;               // 创建拟合对象
-	seg.setOptimizeCoefficients(true);                     // 设置对估计模型参数进行优化处理
-	seg.setModelType(pcl::SACMODEL_LINE);                  // 设置拟合模型为直线模型
-	seg.setMethodType(pcl::SAC_RANSAC);                    // 设置拟合方法为RANSAC
-	seg.setMaxIterations(1000);                             // 设置最大迭代次数
-	seg.setDistanceThreshold(0.1);                       // 判断是否为模型内点的距离阀值/设置误差容忍范围
-
-	int i = 0, nr_points = cloud->points.size();
-	int k = 0;
-	while (k < 5 && cloud->points.size() > 0.1 * nr_points)// 从0循环到5执行6次，并且每次cloud的点数必须要大于原始总点数的0.1倍
-	{
-		pcl::ModelCoefficients coefficients;
-		seg.setInputCloud(cloud);                         // 输入点云						 
-		seg.segment(*inliers, coefficients);              // 内点的索引，模型系数
-
-		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_line(new pcl::PointCloud<pcl::PointXYZ>);
-		pcl::PointCloud<pcl::PointXYZ>::Ptr outside(new pcl::PointCloud<pcl::PointXYZ>);
-		if (inliers->indices.size() > 20) // 判断提取直线上的点数是否小于20个点，小于的话该直线不合格
-		{
-			lineCoff.push_back(coefficients);             // 将参数保存进vector中
-			pcl::ExtractIndices<pcl::PointXYZ> extract;   // 创建点云提取对象
-			extract.setInputCloud(cloud);
-			extract.setIndices(inliers);
-			extract.setNegative(false);                   // 设置为false，表示提取内点
-			extract.filter(*cloud_line);
-
-			extract.setNegative(true);                    // true提取外点（该直线之外的点）
-			extract.filter(*outside);                     // outside为外点点云
-			cloud.swap(outside);                          // 将cloud_f中的点云赋值给cloud
-		}
-		else
-		{
-			PCL_ERROR("Could not estimate a line model for the given dataset.\n");
-			break;
-		}
-
-		std::stringstream ss;
-		ss << "line_" << i + 1 << ".pcd"; // 记录提取的是第几条直线，并以该序号命名输出点云
-		pcl::PCDWriter writer;
-		writer.write<pcl::PointXYZ>(ss.str(), *cloud_line, false);
-
-		i++;
-		k++;
-	}
-}
-
 int main(int argc, char** argv)
 {
-	// 加载点云
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-	if (pcl::io::loadPCDFile<pcl::PointXYZ>("data//L.pcd", *cloud) == -1)
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_input (new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_output (new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_output_rgb (new pcl::PointCloud<pcl::PointXYZRGB>);
+	pcl::PointXYZRGB point_rgb;
+	pcl::io::loadPCDFile("airplane_0002.pcd",*cloud_input);
+
+	std::cout << "Load pcd" << std::endl;
+
+	std::vector<pcl::PointCloud<pcl::PointXYZ>> lines_points;
+	uint16_t lines_num = 5;
+	lines_points.resize(lines_num);     // 需要 resize 一下，否则 extract.filter(models_points[i]); 报错，如果不 resize，需要用 pushback
+	std::vector<pcl::ModelCoefficients> lines_arg; // 模型参数
+	
+
+	fitMultiLines(cloud_input, lines_points, lines_arg, lines_num);
+	pcl::ExtractIndices<pcl::PointXYZ> extract;
+
+	
+
+	extract.setInputCloud(cloud_input);
+
+	std::vector<uint16_t> r;
+	r.push_back(0);
+	r.push_back(0);
+	r.push_back(255);
+	r.push_back(255);
+	r.push_back(0);
+	std::vector<uint16_t> g;
+	g.push_back(0);
+	g.push_back(255);
+	g.push_back(0);
+	g.push_back(255);
+	g.push_back(255);
+	std::vector<uint16_t> b;
+	b.push_back(255);
+	b.push_back(0);
+	b.push_back(0);
+	b.push_back(0);
+	b.push_back(255);
+
+	
+
+	for(int i = 0; i<lines_num; i++)
 	{
-		PCL_ERROR("点云读取失败 \n");
-		return (-1);
+		cloud_output -> clear();
+		
+
+		int size = lines_points[i].size();
+		// std::cout << size << std::endl;
+
+		for(int k = 0; k < size; k++)
+		{
+			point_rgb.x = lines_points[i].points[k].x;
+			point_rgb.y = lines_points[i].points[k].y;
+			point_rgb.z = lines_points[i].points[k].z;
+			point_rgb.r = r[i];
+        	point_rgb.g = g[i];
+        	point_rgb.b = b[i];
+			cloud_output_rgb -> push_back(point_rgb);
+		}
 	}
+	
+	std::cout << cloud_output_rgb->size() << std::endl;
 
-	vector<pcl::ModelCoefficients> LinesCoefficients;
-	fitMultipleLines(cloud, LinesCoefficients);
-
-	cout << "一共拟合出" << LinesCoefficients.size() << "条直线，直线系数分别为：\n" << endl;
-
-	for (auto l : LinesCoefficients)
-	{
-		cout << l.values[0] << "," << l.values[1]
-			<< "," << l.values[2] << "," << l.values[3]
-			<< "," << l.values[4] << "," << l.values[5] << endl;
-	}
+	cloud_viewer(cloud_output_rgb, 0);
 
 	return 0;
 }
-

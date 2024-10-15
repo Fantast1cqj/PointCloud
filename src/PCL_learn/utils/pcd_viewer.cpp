@@ -50,7 +50,7 @@ void cloud_viewer(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr cloud, u_int8_t mo
     if(mod == 0)
         {
         // 简单可视化 (XYZRGB)
-        viewer->setBackgroundColor(255, 255, 255);
+        viewer->setBackgroundColor(0, 0, 0);
         pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud);
         viewer->addPointCloud<pcl::PointXYZRGB>(cloud, rgb, "milk");
         viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "milk");
