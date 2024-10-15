@@ -40,6 +40,9 @@ void fitMultiLines(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, std::vector<pcl
 		
 			models_arg.push_back(*arg);
 
+
+			// 不提取索引，直接将 cloud_in 中 Indexes 对应的点设置为NaN
+
 			pcl::ExtractIndices<pcl::PointXYZ> extract; // 索引提取器
 			extract.setInputCloud(cloud_in);    // 设置输入点云
 			extract.setIndices(Indexes);        // 设置索引
