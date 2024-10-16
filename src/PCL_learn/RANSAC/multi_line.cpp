@@ -1,3 +1,4 @@
+/****** RANSAC 拟合多条直线 ******/
 #include <iostream>
 #include <pcl/io/pcd_io.h>                    
 #include <pcl/point_types.h>                         
@@ -41,7 +42,7 @@ void fitMultiLines(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, std::vector<pcl
 			models_arg.push_back(*arg);
 
 
-			// 不提取索引，直接将 cloud_in 中 Indexes 对应的点设置为NaN
+			// 不提取索引，直接将 cloud_in 中 Indexes 对应的点设置为NaN 是否可行
 
 			pcl::ExtractIndices<pcl::PointXYZ> extract; // 索引提取器
 			extract.setInputCloud(cloud_in);    // 设置输入点云

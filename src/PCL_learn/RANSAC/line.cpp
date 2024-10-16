@@ -1,4 +1,5 @@
 /****** RANSAC 提取直线 ******/
+/****** RANSAC 提取有角度约束的直线 设置坐标轴和坐标轴的夹角 ******/
 #include <iostream>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_cloud.h>
@@ -21,7 +22,13 @@ int main(int argc, char** argv)
     pcl::SACSegmentation<pcl::PointXYZ> seg;   // 分割器
 
     seg.setOptimizeCoefficients(true);      // 可选择配置，设置模RANSAC型系数需要优化
-    seg.setModelType(pcl::SACMODEL_LINE);   // 拟合目标形状 line 
+    seg.setModelType(pcl::SACMODEL_LINE);   // 拟合目标形状 line
+    /****** 拟合有角度约束的直线 ******/
+    // seg.setModelType(pcl::SACMODEL_PARALLEL_LINE);  // 设置模型类型为：有方向约束的直线拟合
+    // const Eigen::Vector3f axis(1, 0, 0);
+	// const double eps = 1.2;
+    // seg.setAxis(axis);    // 设置坐标轴
+	// seg.setEpsAngle(eps); // 设置与坐标轴的夹角
     seg.setMethodType(pcl::SAC_RANSAC);     // 拟合方法：随机采样法
     seg.setDistanceThreshold(0.05);          // 设置误差容忍范围，也就是阈值，直线模型的 宽度
     seg.setMaxIterations(500);              // 最大迭代次数，默认迭代50次
@@ -82,8 +89,6 @@ int main(int argc, char** argv)
 
 
     cloud_viewer(rgb_all, 0);
-
-
     return 0;
 }
 
