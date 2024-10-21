@@ -79,7 +79,6 @@ int main(int argc, char** argv)
         remain_rgb -> points[k].r = 255;
         remain_rgb -> points[k].g = 255;
         remain_rgb -> points[k].b = 255;
-
     }
 
     *cloud_output = *plane_rgb + *remain_rgb;

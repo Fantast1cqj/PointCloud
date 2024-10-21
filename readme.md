@@ -10,6 +10,8 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
     - [denoise 去除噪声](#denoise-去除噪声)
   - [RANSAC (Random sample consensus)](#ransac-random-sample-consensus)
     - [拟合直线](#拟合直线)
+    - [多直线拟合](#多直线拟合)
+    - [平面拟合](#平面拟合)
   - [PCA](#pca)
     - [normals](#normals)
     - [点云 PCA](#点云-pca)
@@ -108,11 +110,39 @@ code: [denoise.cpp](src/PCL_learn/filter/denoise.cpp)
 ## RANSAC (Random sample consensus)
 
 ### 拟合直线
-code: [pass_through.cpp](src/PCL_learn/RANSAC/line.cpp)
+code: [line.cpp.cpp](src/PCL_learn/RANSAC/line.cpp)
 
 最小二乘缺陷：全局最优解，有的数据是噪声，不适合求解
 
     pcl::SACSegmentation<pcl::PointXYZ> seg;
+
+
+### 多直线拟合
+
+code: [multi_line.cpp](src/PCL_learn/RANSAC/multi_line.cpp)
+
+使用 RANSAC 拟合多条直线
+
+    cloud_in.swap(remain); //swap 方法会交换两个智能指针所持有的内部对象的所有权，但不会改变它们指向的对象。
+
+### 平面拟合
+
+code: [plane.cpp](src/PCL_learn/RANSAC/plane.cpp)
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr remain_rgb (new pcl::PointCloud<pcl::PointXYZRGB>);   // 智能指针在赋值的时候需要 resize，pushback()不需要   变量赋值不需要 resize
+    remain_rgb -> width  = remain_size;
+    remain_rgb -> height = 1;
+    remain_rgb -> resize(remain_size);
+    {
+      remain_rgb -> points[k].x = remain -> points[k].x;
+      remain_rgb -> points[k].y = remain -> points[k].y;
+      remain_rgb -> points[k].z = remain -> points[k].z;
+      remain_rgb -> points[k].r = 255;
+      remain_rgb -> points[k].g = 255;
+      remain_rgb -> points[k].b = 255;
+
+    }
+
 
 ## PCA
 ### normals
