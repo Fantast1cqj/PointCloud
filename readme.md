@@ -112,6 +112,10 @@ code: [denoise.cpp](src/PCL_learn/filter/denoise.cpp)
 ### 拟合直线
 code: [line.cpp.cpp](src/PCL_learn/RANSAC/line.cpp)
 
+RANSAC 提取直线
+
+RANSAC 提取有角度约束的直线 设置坐标轴和坐标轴的夹角
+
 最小二乘缺陷：全局最优解，有的数据是噪声，不适合求解
 
     pcl::SACSegmentation<pcl::PointXYZ> seg;
