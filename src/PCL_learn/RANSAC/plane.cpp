@@ -1,4 +1,5 @@
 /****** RANSAC 提取平面 ******/
+/****** 提取有角度限制的平面 ******/
 #include <iostream>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>

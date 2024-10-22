@@ -13,6 +13,7 @@ project(denoise)
 project(RANSAC_line)
 project(RANSAC_lines)
 project(RANSAC_plane)
+project(RANSAC_ball)
 
 find_package(PCL REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -39,6 +40,7 @@ add_executable(denoise filter/denoise.cpp utils/pcd_viewer.cpp)
 add_executable(RANSAC_line RANSAC/line.cpp utils/pcd_viewer.cpp)
 add_executable(RANSAC_lines RANSAC/multi_line.cpp utils/pcd_viewer.cpp)
 add_executable(RANSAC_plane RANSAC/plane.cpp utils/pcd_viewer.cpp)
+add_executable(RANSAC_ball RANSAC/ball.cpp utils/pcd_viewer.cpp)
 
 
 
@@ -55,3 +57,4 @@ target_link_libraries(denoise ${PCL_LIBRARIES})
 target_link_libraries(RANSAC_line ${PCL_LIBRARIES})
 target_link_libraries(RANSAC_lines ${PCL_LIBRARIES})
 target_link_libraries(RANSAC_plane ${PCL_LIBRARIES})
+target_link_libraries(RANSAC_ball ${PCL_LIBRARIES})
