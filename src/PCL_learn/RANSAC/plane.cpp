@@ -1,3 +1,4 @@
+/****** RANSAC 提取平面 ******/
 #include <iostream>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
@@ -7,7 +8,39 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <boost/thread/thread.hpp>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/segmentation/sac_segmentation.h>
 #include "../utils/pcd_viewer.h"
+#include <pcl/ModelCoefficients.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/common/common_headers.h>
+
+/****** 提取有角度限制的平面 ******/
+void get_plane(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, float angle, Eigen::Vector3f Axis, pcl::ModelCoefficients::Ptr coefficients, pcl::PointIndices::Ptr inliers)
+{
+    pcl::SACSegmentation<pcl::PointXYZ> seg;
+    
+    /****** 分割其配置 ******/
+    seg.setOptimizeCoefficients(true);  // 可选择配置，设置模型系数需要优化
+    seg.setModelType(pcl::SACMODEL_PERPENDICULAR_PLANE);//设置分割的模型类型
+    seg.setMethodType(pcl::SAC_RANSAC);    // 设置所用随机参数估计方法
+    seg.setDistanceThreshold(0.05);        // 距离阈值，单位m.
+                  
+    float EpsAngle= pcl::deg2rad(angle);   // 角度转弧度
+    // Eigen::Vector3f Axis(0.0, 0.0, 1.0);
+    seg.setAxis(Axis);                     // 指定的轴
+    seg.setEpsAngle(EpsAngle);             // 夹角阈值(弧度制)
+
+    seg.setInputCloud(cloud_in);            // 输入点云
+    seg.segment(*inliers, *coefficients);  // 存储结果到点集合inliers及存储平面模型系数coefficients
+    // if (inliers->indices.size() == 0)
+    // {
+    //     PCL_ERROR("Could not estimate a planar model for the given dataset.");
+    // }
+
+
+}
+
+
 
 int main(int argc, char** argv)
 {
@@ -83,12 +116,32 @@ int main(int argc, char** argv)
     }
 
     *cloud_output = *plane_rgb + *remain_rgb;
-    cloud_viewer(cloud_output, 0);
+    // cloud_viewer(cloud_output, 0);
 
 
 
 
+
+    /****** 提取有角度限制的平面 ******/
+    Eigen::Vector3f Axis(0.0, 0.0, 1.0);
+    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+    pcl::PointIndices::Ptr inliers2(new pcl::PointIndices);
+
+    get_plane(cloud_input, 20, Axis, coefficients, inliers2);
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::ExtractIndices<pcl::PointXYZ> extract;
+    extract.setInputCloud(cloud_input);
+    extract.setIndices(inliers2);
+    extract.filter(*cloud_filtered);
+
+    cloud_viewer(cloud_filtered, 0);
 
 
     return 0;
 }
+
+
+
+
+
