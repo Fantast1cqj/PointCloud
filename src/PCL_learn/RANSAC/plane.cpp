@@ -97,6 +97,7 @@ int main(int argc, char** argv)
     pcl::ExtractIndices<pcl::PointXYZ> extr; // 索引提取器
     extr.setInputCloud(cloud_input);         // 设置输入点云
     extr.setIndices(inds);                   // 设置索引，这里的索引是 pcl::PointIndicesPtr 形式
+    // extr.setIndices(boost::make_shared<std::vector<int>>(inliers));   // 这种方式也能用，使用的是 std::vector<int> 共享指针
     extr.setNegative(true);                  // 提取索引的外点
     extr.filter(*remain);     // 提取出 indices 中的点云
     uint32_t remain_size(0);
@@ -117,7 +118,7 @@ int main(int argc, char** argv)
     }
 
     *cloud_output = *plane_rgb + *remain_rgb;
-    // cloud_viewer(cloud_output, 0);
+    cloud_viewer(cloud_output, 0);
 
 
 
