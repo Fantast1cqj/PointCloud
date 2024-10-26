@@ -65,6 +65,8 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
     - [Point Walk](#point-walk)
   - [Zero-shot](#zero-shot)
     - [Point Cloud Colorization：](#point-cloud-colorization)
+- [Conda](#conda)
+  - [解决 conda 权限问题](#解决-conda-权限问题)
 
 # PCL
 
@@ -700,3 +702,20 @@ SFA 接收输入 (X, u)，其中 X 是 n × c 的矩阵，u 是上采样比，SF
 ### Point Cloud Colorization：
 
 通过 reference viewpoint estimation 获得相机位姿 Vp，Pin 初始化 3DGS 得到 Gin，Gin的中心是固定的，以保持Pin的形状。
+
+# Conda
+## 解决 conda 权限问题
+报错：
+
+    EnvironmentNotWritableError: The current user does not have write permissions to the target environment.
+      environment location: /home/ps/anaconda3/envs/Seedformer
+      uid: 1000
+      gid: 1000
+
+解决：
+
+    sudo chmod -R 777 /home/ps/anaconda3/envs/Seedformer
+
+可以正常安装：
+
+    conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
