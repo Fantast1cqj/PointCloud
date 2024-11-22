@@ -6,12 +6,16 @@ key points generate(3D GS)
 
 ==============================================================
 
-Author: Fan Quanjiang
-Date: 2024.11.19
-version: 0.70
-note: 分开预测均值、方差、四元数；增加冻结 cov 相关层，尝试解决 v0.61 无法先训 means 再一起训 
-
-next: 加一个loss, 所有点和gt的; decoder时候降采样一次加一次全局特征, cat两次; 用 so3 预测旋转矩阵
+Author:
+Date:
+version: 0.5
+note: 裁剪限制采样范围    先训均值再一起训有问题，训练完均值再采样裁切会导致矩阵不正定     同时训正常效果可以
+      相比 v0.4 多了裁剪限制两倍方差，两个 loss 应该同时训，不能先训均值
+      
+      
+      
+result: train_kp3dgs_shapenet55_Log_2024_11_14_02_41_29   error
+        train_kp3dgs_shapenet55_Log_2024_11_13_08_17_02   normal
 ==============================================================
 '''
 import torch
@@ -61,58 +65,41 @@ def sample_with_clipping(means, cov_matrices, num_samples):
     return samples_clipped
 
 
-def normalize_quaternions(q):
-    """
-    对四元数张量进行归一化.
-    
-    input:
-    q (torch.Tensor): 输入张量，形状为 (B, N, 4)
-    
-    output:
-    torch.Tensor: 归一化后的四元数张量，形状为 (B, N, 4)
-    """
-    # 计算四元数的模长，模长的形状是 (B, N, 1)
-    norm = torch.norm(q, dim=-1, keepdim=True)
-    
-    # 将四元数除以它的模长进行归一化
-    q_normalized = q / norm
-    
-    return q_normalized
+# class Sample_with_clipping(nn.Module):
+#     def __init__(self, num_samples):
+#         super(Sample_with_clipping, self).__init__()
+#         self.num_samples = num_samples
+        
+#     def forward(self, means, cov_matrices):
+#         """
+#         Args:
+#             means: 均值 (B, N, 3)
+#             cov_matrices: 协方差矩阵 (B, N, 3, 3)
+#             num_samples: 采样数量
+#             lower_bound: 每个坐标的最小值
+#             upper_bound: 每个坐标的最大值
+
+#         Returns:
+#             sample_points: 裁剪后的样本 (B, N, num_samples, 3)
+#         """
+#         mvn = MultivariateNormal(means, cov_matrices)
+#         sample_points = mvn.sample(torch.Size([self.num_samples])) 
+        
+        
+#         stddev = torch.sqrt(torch.diagonal(cov_matrices, dim1=-2, dim2=-1))
+#         lower_bound = means -  1.7 * stddev  # (B, N, 3)
+#         upper_bound = means +  1.7 * stddev  # (B, N, 3)
+#         samples_clip = sample_points.clone()  # 防止在原张量上做 inplace 修改
+#         for i in range(3):  # 3 对应 x, y, z 轴
+#             samples_clip[..., i] = torch.clamp(sample_points[..., i], min=lower_bound[..., i], max=upper_bound[..., i]) # torch.Size([60, 112, 64])
+        
+        
+#         samples_clip = samples_clip.permute(1,2,0,3)
+        
+#         return samples_clip
 
 
-def quaternion_2_rotation_matrix(q):
-    """
-    将四元数转换为旋转矩阵.
-    
-    参数:
-    q (torch.Tensor): 四元数张量，形状为 (B, N, 4)
-    
-    返回:
-    torch.Tensor: 旋转矩阵张量，形状为 (B, N, 3, 3)
-    """
-    # 提取四元数的各个分量
-    q0 = q[:, :, 0]  # 标量部分
-    q1 = q[:, :, 1]  # x 轴分量
-    q2 = q[:, :, 2]  # y 轴分量
-    q3 = q[:, :, 3]  # z 轴分量
 
-    # 计算旋转矩阵
-    R = torch.zeros(q.shape[0], q.shape[1], 3, 3, device=q.device)
-    
-    # 按照公式计算旋转矩阵
-    R[:, :, 0, 0] = 1 - 2 * (q2**2 + q3**2)
-    R[:, :, 0, 1] = 2 * (q1 * q2 - q0 * q3)
-    R[:, :, 0, 2] = 2 * (q1 * q3 + q0 * q2)
-    
-    R[:, :, 1, 0] = 2 * (q1 * q2 + q0 * q3)
-    R[:, :, 1, 1] = 1 - 2 * (q1**2 + q3**2)
-    R[:, :, 1, 2] = 2 * (q2 * q3 - q0 * q1)
-    
-    R[:, :, 2, 0] = 2 * (q1 * q3 - q0 * q2)
-    R[:, :, 2, 1] = 2 * (q2 * q3 + q0 * q1)
-    R[:, :, 2, 2] = 1 - 2 * (q1**2 + q2**2)
-    
-    return R
 
 
 class conv1d(nn.Module):
@@ -137,8 +124,6 @@ class mlp(nn.Module):
 
     def forward(self,x):
         return self.relu(self.mlp(x))
-
-
 
 
 
@@ -180,109 +165,80 @@ class Encoder(nn.Module):
 
 
 
-# generate kp
+# generate 
 class KP_3DGS(nn.Module):
     def __init__(self,k = 64):
         super(KP_3DGS,self).__init__()
         self.point_number = k # 64
         
-        self.encoder_means = Encoder()
-        self.encoder_covs = Encoder()
-        # self.layer1 = conv1d(3,16)
-        # self.layer2 = conv1d(16,64)
-        # self.layer3 = conv1d(64,256)
-        # self.layer4 = conv1d(256,1024)
-
-        self.get_means1 = mlp(1024+512,512)
-        self.get_means2 = mlp(512,256)
-        self.get_means3 = mlp(256,self.point_number*3)
+        self.encoder = Encoder()
         
-        self.get_cov1 = mlp(1024+512,512)
-        self.get_cov2 = mlp(512,256)
-        self.get_cov3 = mlp(256,self.point_number*7)
+        self.layer1 = conv1d(3,16)
+        self.layer2 = conv1d(16,64)
+        self.layer3 = conv1d(64,256)
+        self.layer4 = conv1d(256,1024)
+
+        self.ge_point1 = mlp(1024+512,512)
+        self.ge_point2 = mlp(512,256)
+        self.ge_point3 = mlp(256,self.point_number*9)
         # self.sample = Sample_with_clipping(num_samples = 30)
 
-    def freeze_cov_layers(self):
-        """Freeze the cov-related layers."""
-        for param in self.encoder_covs.parameters():
-            param.requires_grad = False
-        for param in self.get_cov1.parameters():
-            param.requires_grad = False
-        for param in self.get_cov2.parameters():
-            param.requires_grad = False
-        for param in self.get_cov3.parameters():
-            param.requires_grad = False
+        # self.pp_point3 = mlp(256,self.point_number)
+        
     
-    def unfreeze_cov_layers(self):
-        """Unfreeze the cov-related layers."""
-        for param in self.encoder_covs.parameters():
-            param.requires_grad = True
-        for param in self.get_cov1.parameters():
-            param.requires_grad = True
-        for param in self.get_cov2.parameters():
-            param.requires_grad = True
-        for param in self.get_cov3.parameters():
-            param.requires_grad = True
-    
-    
-
     def forward(self,partial):
         """
         Args:
             partial: (B, 3, N)
         """
         # encoder
-        partial_means, partial_feat_means = self.encoder_means(partial)
-        partial_covs, partial_feat_covs = self.encoder_covs(partial)  # (B, 1024+512, 512)
-        # decoder
-        partial_feat_means = partial_feat_means.permute(0,2,1) # (B, 512, 1024+512)
-        means_feat = self.get_means1(partial_feat_means) # (B, N, 512)
-        means_feat = F.dropout(means_feat,p = 0.05)
-        means_feat = self.get_means2(means_feat)  # (B, N, 256)
-        means_feat = F.dropout(means_feat,p = 0.02)
-        means = self.get_means3(means_feat)  # (B, N, 64*3)   mean_x mean_y mean_z σ1 σ2 σ3 q0 q1 q2 q3 q4
-        means = torch.mean(means,dim = 1)  # (B, 64*3)
-        means = means.reshape((-1, self.point_number, 3)) # (B, 64, 3)   mean_x mean_y mean_z σ1 σ2 σ3 q0 q1 q2 q3 q4
+        partial_, partial_feat = self.encoder(partial)
+        partial_feat = partial_feat.permute(0,2,1) # (B, 512, 1024+512)
         
+        kp_feat = self.ge_point1(partial_feat) # (B, N, 512)
+        kp_feat = F.dropout(kp_feat,p = 0.05)
+        kp_feat = self.ge_point2(kp_feat)  # (B, N, 256)
+        kp_feat = F.dropout(kp_feat,p = 0.02)
         
-        partial_feat_covs = partial_feat_covs.permute(0,2,1) # (B, 512, 1024+512)
-        cov_feat = self.get_cov1(partial_feat_covs) # (B, N, 512)
-        cov_feat = F.dropout(cov_feat,p = 0.05)
-        cov_feat = self.get_cov2(cov_feat)  # (B, N, 256)
-        cov_feat = F.dropout(cov_feat,p = 0.02)
-        cov_feat = self.get_cov3(cov_feat)  # (B, N, 64*7)   σ1 σ2 σ3 q0 q1 q2 q3 q4
-        cov_feat = torch.mean(cov_feat,dim = 1)  # (B, 64*7)
-        var_q = cov_feat.reshape((-1, self.point_number, 7)) # (B, 64, 7)   σ1 σ2 σ3 q0 q1 q2 q3 q4
+        kp_gs = self.ge_point3(kp_feat)  # (B, N, 64*9)
+        # pp = self.pp_point3(kp_feat)
+        kp_gs = torch.mean(kp_gs,dim = 1)  # (B, 64*9)
+        kp_gs = kp_gs.reshape((-1,self.point_number,9)) # (B, 64, 9)   x y z a b c ab ac bc
         
-        # get cov_mat
-        B, N, _ = means.shape
-        
-        var_element = var_q[:, :, :3] # (B, 64, 3) σ1 σ2 σ3
-        epsilon = 1e-5
-        var_element = torch.abs(var_element) + epsilon
-        
-        q = var_q[:, :, 3:]  # (B, 64, 4)  q0 q1 q2 q3 q4
-        
-        q_norm = normalize_quaternions(q) # (B, 64, 4)
-        R = quaternion_2_rotation_matrix(q_norm)  # (B, N, 3, 3)
-        
-        var_mat = torch.zeros(B, N, 3, 3, device = var_element.device)
-        # for b in range(B):
-        #     for n in range(N):
-        #         # 取方差向量并将其填充到对角线上
-        #         diag = torch.diag(var_element[b, n])
-        #         var_mat[b, n] = diag
-        
-        var_mat = torch.diag_embed(var_element)
-        
-        # var_mat_squared = torch.matmul(var_mat, var_mat)  # 方差矩阵平方
-        cov_mat = torch.matmul(R, torch.matmul(var_mat, R.transpose(-2, -1)))  # (B, N, 3, 3)
-        
-        # sample
-        sample_num = 30
-        sample_points = sample_with_clipping(means, cov_mat, sample_num)  # # (B, N, sample_num, 3)
-        
+        B, N, _ = kp_gs.shape
+        means = kp_gs[..., :3]  # (B, 64, 3)
+        cov_elements = kp_gs[..., 3:]  # (B, 64, 6)
 
+        
+        # make sure > 0
+        device = cov_elements.device
+        cov_elements = torch.abs(cov_elements)
+        cov_elements = torch.where(cov_elements == 0, torch.tensor(1e-6,device=device), cov_elements)
+        
+        
+        cov_matrices = torch.zeros(B, N, 3, 3, device=cov_elements.device)
+        # fill diagonal
+        cov_matrices[..., 0, 0] = cov_elements[..., 0]
+        cov_matrices[..., 1, 1] = cov_elements[..., 1]
+        cov_matrices[..., 2, 2] = cov_elements[..., 2]
+        # fill under diagonal
+        cov_matrices[..., 0, 1] = 0.0
+        cov_matrices[..., 1, 0] = cov_elements[..., 3]
+        cov_matrices[..., 0, 2] = 0.0
+        cov_matrices[..., 2, 0] = cov_elements[..., 4]
+        cov_matrices[..., 1, 2] = 0.0
+        cov_matrices[..., 2, 1] = cov_elements[..., 5]
+        
+        
+        # 保证正定：
+        cov_matrices = cov_matrices @ cov_matrices.transpose(-2, -1)
+        cov_matrices = cov_matrices + torch.eye(3, device=cov_matrices.device) * 1e-6
+        
+        # Sample
+        sample_num = 30
+        sample_points = sample_with_clipping(means, cov_matrices, sample_num) # (B, N, sample_num, 3)
+        
+        
         # test
         # sample_points_re = sample_points.reshape(B, -1, 3)  # (B, 640, 3)
         # kp_3dgs = sample_points_re[0].unsqueeze(0) # (1,640,3)
@@ -296,7 +252,9 @@ class KP_3DGS(nn.Module):
         # np.save(file_path, kp_cpu)     # 保存所有
         # exit()
         
-    
+        
+        
+        
 
         return means, sample_points
         
@@ -341,11 +299,7 @@ class kp_3dgs_loss(nn.Module):
 
         cd2 = torch.sum(torch.stack(cd2_list))
 
-        
-        
-        B1,N1,_ = means.shape
-        gt1 = fps_subsample(gt,N1)
-        cd1 = CD(means, gt1)
+        cd1 = CD(means, gt)
         
 
         return cd1*1e3 + cd2*1e3, cd1*1e3 , cd2*1e3

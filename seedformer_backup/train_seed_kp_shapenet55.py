@@ -8,7 +8,8 @@ SeedFormer + key poins
 
 Author:
 Date:
-
+cmd: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 python3 train_seed_kp_shapenet55.py 
+     CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 python3 train_seed_kp_shapenet55.py --test --pretrained train_seed_kp_shapenet55_Log_2024_11_12_13_19_06
 ==============================================================
 '''
 
@@ -44,7 +45,7 @@ parser.add_argument('--test', dest='test', help='Test neural networks', action='
 parser.add_argument('--inference', dest='inference', help='Inference for benchmark', action='store_true')
 parser.add_argument('--output', type=int, default=False, help='Output testing results.')       # 是否输出点云
 parser.add_argument('--pretrained', type=str, default='', help='Pretrained path for testing.')
-parser.add_argument('--mode', type=str, default='median', help='Testing mode [easy, median, hard].')
+parser.add_argument('--mode', type=str, default='easy', help='Testing mode [easy, median, hard].')  # 测试难度
 args = parser.parse_args()
 
 
@@ -90,7 +91,7 @@ def ShapeNet55Config():
     __C.DIR.OUT_PATH                                 = '../results'
     __C.DIR.TEST_PATH                                = '../test'
     # __C.CONST.DEVICE                                 = '0, 1'
-    __C.CONST.DEVICE                                 = '0, 1, 2, 3, 4, 5'
+    __C.CONST.DEVICE                                 = '0, 1, 2, 3'
     # __C.CONST.WEIGHTS                                = None # 'ckpt-best.pth'  # specify a path to run test and inference
 
     #
@@ -103,7 +104,7 @@ def ShapeNet55Config():
     # Train
     #
     __C.TRAIN                                        = edict()
-    __C.TRAIN.BATCH_SIZE                             = 200     # 48
+    __C.TRAIN.BATCH_SIZE                             = 150     # 48
     __C.TRAIN.N_EPOCHS                               = 400
     __C.TRAIN.LEARNING_RATE                          = 0.001
     __C.TRAIN.LR_DECAY                               = 100
@@ -209,7 +210,7 @@ def train_net(cfg):
         model.load_state_dict(checkpoint['model'])
         print('Recover complete. Current epoch = #%d; best metrics = %s.' % (checkpoint['epoch_index'], checkpoint['best_metrics']))
 
-    kp_net_checkpoint = torch.load('../results_kp/train_kp_shapenet55_Log_2024_10_22_11_08_37/checkpoints/ckpt-best.pth')
+    kp_net_checkpoint = torch.load('../results_kp/train_kp_shapenet55_Log_2024_10_22_11_08_37/checkpoints/ckpt-best.pth')   # 128 kp 点的 checkpoints
     kp_model.load_state_dict(kp_net_checkpoint['model'])    # ???
     ##################
     # Training Manager
@@ -284,10 +285,10 @@ def test_net(cfg):  # 测试
     # cfg.CONST.WEIGHTS = os.path.join(cfg.DIR.OUT_PATH, cfg.DIR.PRETRAIN, 'checkpoints', 'ckpt-best.pth')
     # print('Recovering from %s ...' % (cfg.CONST.WEIGHTS))
     
-    kp_net_checkpoint = torch.load('../results_kp/train_kp_shapenet55_Log_2024_10_22_11_08_37/checkpoints/ckpt-best.pth')# load checkpoint
+    kp_net_checkpoint = torch.load('../results_kp/train_kp_shapenet55_Log_2024_10_22_11_08_37/checkpoints/ckpt-best.pth')# load checkpoint 128kp train from gt
     kp_model.load_state_dict(kp_net_checkpoint['model'])
     
-    checkpoint = torch.load('../results/train_seed_kp_shapenet55_Log_2024_10_25_08_55_25/checkpoints/ckpt-best.pth')     # load checkpoint
+    checkpoint = torch.load('../results/train_seed_kp_shapenet55_Log_2024_11_12_13_19_06/checkpoints/ckpt-best.pth')     # load checkpoint
     model.load_state_dict(checkpoint['model'])
 
     ##################

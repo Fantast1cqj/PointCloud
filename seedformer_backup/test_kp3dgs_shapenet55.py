@@ -8,10 +8,10 @@ Train ket points net
 
 Author:
 Date:
-
+cmd: CUDA_VISIBLE_DEVICES=6,7 python3 test_kp3dgs_shapenet55.py
 ==============================================================
 '''
-from model_kp_3dgs import KP_3DGS,ppro_cd_loss
+from model_kp_3dgs import KP_3DGS,kp_3dgs_loss
 from key_point_net import KPN,ppro_cd_loss
 import torch
 import torch.nn as nn
@@ -262,8 +262,11 @@ class Manager_kp:
                 num_crop = int(npoints * crop_ratio[mode])  # 设置残缺点云点的数量
                 for partial_id, item in enumerate(choice):
                     partial, _ = utils.helpers.seprate_point_cloud(gt, npoints, num_crop, fixed_points = item)
-                    partial = fps_subsample(partial, 2048).permute(0,2,1)  # 对加载的数据进行下采样当残缺点云
-
+                    # print("partial shape: ",partial.shape)
+                    partial = fps_subsample(partial, 2048).permute(0,2,1)  # 对加载的数据进行下采样当残缺点云  4096
+                    # print("partial shape: ",partial.shape)
+                    # print(partial)
+                    # exit()
                     
                     # # print("partial!!!!!!!!!")
                     # # print(partial.shape)   # ([1, 2048, 3])
@@ -280,8 +283,9 @@ class Manager_kp:
                 
                     
                     
-                    kp_3dgs, means = model(partial)
-                    
+                    means, kp_3dgs = model(partial)
+                    B, N, sample_num,_ = kp_3dgs.shape
+                    kp_3dgs = kp_3dgs.reshape(B, N * sample_num, 3)
                     # print("kp_3dgs shape", kp_3dgs.shape) # kp_3dgs shape torch.Size([1, 896, 3])
                     # print("means shape", means.shape)   # torch.Size([1, 64, 3])
                     # exit()
@@ -327,7 +331,7 @@ class Manager_kp:
                     file_path2 = os.path.join(base_path, file_name2)
                     np.save(file_path2, gt_cpu)     # 保存所有
                     
-                    if ii == 50:
+                    if ii == 100:
                         exit()
                     
                     # print(f'Array {ii} is saved to {file_path}')
@@ -431,7 +435,7 @@ def test_kp(cfg):  # 测试
     # else:
     #     cfg.DIR.PRETRAIN = args.pretrained
 
-    cfg.DIR.PRETRAIN = 'train_kp3dgs_shapenet55_Log_2024_11_04_12_50_37'
+    cfg.DIR.PRETRAIN = 'train_kp3dgs_shapenet55_Log_2024_11_19_13_00_01'
     
     # Set up folders for logs and checkpoints
     testset_name = cfg.DATASETS.SHAPENET55.CATEGORY_FILE_PATH    # 测试集文件名列表 test.txt
@@ -460,7 +464,7 @@ def test_kp(cfg):  # 测试
     # cfg.CONST.WEIGHTS = os.path.join(cfg.DIR.OUT_PATH, cfg.DIR.PRETRAIN, 'checkpoints', 'ckpt-best.pth')
     # print(cfg.CONST.WEIGHTS)
     # print('Recovering from %s ...' % (cfg.CONST.WEIGHTS))
-    checkpoint = torch.load('../results_kp3dgs/train_kp3dgs_shapenet55_Log_2024_11_05_14_10_21/checkpoints/ckpt-best.pth')   # load check points
+    checkpoint = torch.load('../results_kp3dgs/train_kp3dgs_shapenet55_Log_2024_11_19_13_00_01/checkpoints/ckpt-best.pth')   # load check points
     model.load_state_dict(checkpoint['model'])
 
     ##################

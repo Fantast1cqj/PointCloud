@@ -7,8 +7,8 @@ SeedFormer: Point Cloud Completion
 ==============================================================
 
 Author:
-Date: 2024-11-11
-version: 0.3
+Date: 2024-10-17
+version: 0.2
 ==============================================================
 '''
 
@@ -53,8 +53,7 @@ def index_points(points, idx):
 
 class FeatureExtractor_source(nn.Module):
     def __init__(self, out_dim=1024, n_knn=20):
-        """
-        Encoder that encodes information of partial point cloud
+        """Encoder that encodes information of partial point cloud
         """
         super(FeatureExtractor_source, self).__init__()
         self.sa_module_1 = PointNet_SA_Module_KNN(512, 16, 3, [64, 128], group_all=False, if_bn=False, if_idx=True)
@@ -84,8 +83,7 @@ class FeatureExtractor_source(nn.Module):
 
 class FeatureExtractor_force(nn.Module):     # 直接把 partial_cloud 和 kp 加起来
     def __init__(self, out_dim=1024, n_knn=20):
-        """
-        Encoder that encodes information of partial point cloud
+        """Encoder that encodes information of partial point cloud
         """
         super(FeatureExtractor_force, self).__init__()
         self.sa_module_1 = PointNet_SA_Module_KNN(512, 16, 3, [64, 128], group_all=False, if_bn=False, if_idx=True)
@@ -128,49 +126,51 @@ class FeatureExtractor(nn.Module):
         self.sa_module_2 = PointNet_SA_Module_KNN(128, 16, 128, [128, 256], group_all=False, if_bn=False, if_idx=True)
         self.sa_module_3 = PointNet_SA_Module_KNN(None, None, 256, [512, out_dim], group_all=True, if_bn=False)
         self.sa_kp_1 = PointNet_SA_Module_KNN(128, 8, 3, [64, 128], group_all=False, if_bn=False, if_idx=True)
-        # self.sa_kp_2 = PointNet_SA_Module_KNN(128, 8, 128, [128, 256], group_all=False, if_bn=False, if_idx=True)
+        self.sa_kp_2 = PointNet_SA_Module_KNN(128, 8, 128, [128, 256], group_all=False, if_bn=False, if_idx=True)
         
         
         
         self.transformer_1 = vTransformer(128, dim=64, n_knn=n_knn)
         self.transformer_2 = vTransformer(256, dim=64, n_knn=n_knn)
-        self.kp_transformer_1 = vTransformer(128, dim=64, n_knn=8)
-        # self.kp_transformer_2 = vTransformer(256, dim=64, n_knn=n_knn)
+        self.kp_transformer_1 = vTransformer(128, dim=64, n_knn=n_knn)
+        self.kp_transformer_2 = vTransformer(256, dim=64, n_knn=n_knn)
         
         
 
     def forward(self, partial_cloud, kp):
         """
         Args:
-             partial_cloud: b, 3, 2048
+             partial_cloud: b, 3, n
              kp: b,3,128
 
         Returns:
             l3_points: (B, out_dim, 1)
         """
-        cat0_points = torch.cat((partial_cloud, kp), dim=2) # (B, 3, 2176)
-        l0_xyz = cat0_points  # (B, 3, 2176)
-        l0_points = cat0_points
-        kp0_xyz = kp
-        kp0_feat = kp
+       
+        
+        l0_xyz = partial_cloud  # (B, 3, 2048)
+        l0_points = partial_cloud
+        
+        kp_xyz_0 = kp
+        kp_feat_0 = kp
         
         
         l1_xyz, l1_points, idx1 = self.sa_module_1(l0_xyz, l0_points)  # (B, 3, 512), (B, 128, 512)  l1_xyz：512个点xyz坐标 l1_points：512个点，128维特征
         l1_points = self.transformer_1(l1_points, l1_xyz)   # l1_points用transformer增强特征
-        kp1_xyz, kp1_points, pk1_id = self.sa_kp_1(kp0_xyz, kp0_feat)  # (B, 3, 128)  (B, 128, 128)
-        kp1_points = self.kp_transformer_1(kp1_points, kp1_xyz)            # (B, 128, 128)
+        kp_xyz1, kp_feat1, pk_id1 = self.sa_kp_1(kp_xyz_0, kp_feat_0)  # (B, 3, 128)  (B, 128, 128)
+        kp_feat1 = self.kp_transformer_1(kp_feat1, kp_xyz1)            # (B, 128, 128)
         
         
-        cat1_xyz = torch.cat((l1_xyz, kp1_xyz), dim=2) # (B, 3, 640)
-        cat1_point = torch.cat((l1_points, kp1_points), dim=2) # (B, 128, 640)
-        
-        mix_xyz, mix_points, idx2 = self.sa_module_2(cat1_xyz, cat1_point) # (B, 3, 128) (B, 256, 128)
-        mix_points = self.transformer_2(mix_points, mix_xyz)  # (B, 256, 128)
-        
-        l3_xyz, feat_all = self.sa_module_3(mix_xyz, mix_points)  # (B, 3, 1), (B, out_dim, 1)   128个点变成1个点，特征变成一个out_dim维的全局特征
+        l2_xyz, l2_points, idx2 = self.sa_module_2(l1_xyz, l1_points)  # (B, 3, 128), (B, 256, 128)  512个点变128个，特征变256
+        l2_points = self.transformer_2(l2_points, l2_xyz)   # l2_points用transformer增强特征
+        kp_xyz2, kp_feat2, pk_id2 = self.sa_kp_2(kp_xyz1, kp_feat1)    # (B, 3, 128)  (B, 256, 128)
+        kp_feat2 = self.kp_transformer_2(kp_feat2, kp_xyz2)            # (B, 256, 128)
         
 
-        return feat_all, mix_xyz, mix_points
+        
+        # l3_xyz, l3_points = self.sa_module_3(l2_xyz, l2_points)  # (B, 3, 1), (B, out_dim, 1)   128个点变成1个点，特征变成一个out_dim维的全局特征
+
+        return l2_xyz, l2_points, kp_xyz2, kp_feat2
 
 
 # 加 cross attention
@@ -576,7 +576,9 @@ class SeedFormer(nn.Module):
 
         # Seed Generator
         self.feat_extractor = FeatureExtractor(out_dim=feat_dim, n_knn=n_knn)
-
+        self.feat_extractor_source = FeatureExtractor_source(out_dim=feat_dim, n_knn=n_knn)
+        
+        self.feat_extractor_force = FeatureExtractor_force(out_dim=feat_dim, n_knn=n_knn)
         self.kpfeat_extractor = nn.Sequential(
             nn.Conv1d(3, 128, 1),
             nn.BatchNorm1d(128),
@@ -621,13 +623,13 @@ class SeedFormer(nn.Module):
         kp = kp.permute(0, 2, 1).contiguous() # (B, 3, 128)
         
         # method 0
-        feat, mixed_xyz, mixed_feat = self.feat_extractor(partial_cloud, kp) # (B, feat_dim, 1)
+        # feat, mixed_xyz, mixed_feat = self.feat_extractor_source(partial_cloud) # (B, feat_dim, 1)
         
         # method 1
-        # patch_xyz, patch_feat, kp_xyz, kp_feat = self.feat_extractor(partial_cloud, kp) # feat: (B, 512, 1) patch_xyz: (B, 3, 128) patch_feat: (B, 256, 128)
-        # mixed_xyz, mixed_feat = self.mix(patch_xyz, patch_feat, kp_xyz, kp_feat)    # patch + kp  (B, 3, 128) (B, 256, 128)
-        # mixed_feat = self.feat_transformer(mixed_feat, mixed_xyz)
-        # point_, feat = self.feat_global(mixed_xyz, mixed_feat)    # feat global (B, 512, 1)
+        patch_xyz, patch_feat, kp_xyz, kp_feat = self.feat_extractor(partial_cloud, kp) # feat: (B, 512, 1) patch_xyz: (B, 3, 128) patch_feat: (B, 256, 128)
+        mixed_xyz, mixed_feat = self.mix(patch_xyz, patch_feat, kp_xyz, kp_feat)    # patch + kp  (B, 3, 128) (B, 256, 128)
+        mixed_feat = self.feat_transformer(mixed_feat, mixed_xyz)
+        point_, feat = self.feat_global(mixed_xyz, mixed_feat)    # feat global (B, 512, 1)
         
         
         # method 3

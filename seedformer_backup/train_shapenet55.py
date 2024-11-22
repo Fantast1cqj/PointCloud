@@ -41,7 +41,7 @@ parser.add_argument('--kp_net_model', type=str, default='key_point_net', help='I
 parser.add_argument('--arch_model', type=str, default='seedformer_dim128', help='Model to use.')
 parser.add_argument('--test', dest='test', help='Test neural networks', action='store_true')
 parser.add_argument('--inference', dest='inference', help='Inference for benchmark', action='store_true')
-parser.add_argument('--output', type=int, default=True, help='Output testing results.')
+parser.add_argument('--output', type=int, default=False, help='Output testing results.')
 parser.add_argument('--pretrained', type=str, default='', help='Pretrained path for testing.')
 parser.add_argument('--mode', type=str, default='median', help='Testing mode [easy, median, hard].')
 args = parser.parse_args()

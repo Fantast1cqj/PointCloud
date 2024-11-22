@@ -23,7 +23,7 @@ import utils.data_loaders
 from easydict import EasyDict as edict
 from importlib import import_module
 from pprint import pprint
-from manager import Manager
+from manager_seed_kp import Manager
 
 
 TRAIN_NAME = os.path.splitext(os.path.basename(__file__))[0]
@@ -36,7 +36,8 @@ TRAIN_NAME = os.path.splitext(os.path.basename(__file__))[0]
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--desc', type=str, default='Training/Testing SeedFormer', help='description')
-parser.add_argument('--net_model', type=str, default='model', help='Import module.')
+parser.add_argument('--net_model', type=str, default='model_addkp', help='Import module.')
+parser.add_argument('--kp_net_model', type=str, default='key_point_net', help='Import kp module.')
 parser.add_argument('--arch_model', type=str, default='seedformer_dim128', help='Model to use.')
 parser.add_argument('--test', dest='test', help='Test neural networks', action='store_true')
 parser.add_argument('--inference', dest='inference', help='Inference for benchmark', action='store_true')
@@ -185,10 +186,14 @@ def train_net(cfg):
     #######################
 
     Model = import_module(args.net_model)
+    kp_Model = import_module(args.kp_net_model) # 在当前目录下找 key_point_net.py
+    
     model = Model.__dict__[args.arch_model](up_factors=cfg.NETWORK.UPSAMPLE_FACTORS)
+    kp_model = kp_Model.__dict__['kp_128']()
     # print(model)
     if torch.cuda.is_available():
         model = torch.nn.DataParallel(model).cuda()
+        kp_model = torch.nn.DataParallel(kp_model).cuda()
 
     # load existing model
     if 'WEIGHTS' in cfg.CONST:
@@ -197,7 +202,8 @@ def train_net(cfg):
         model.load_state_dict(checkpoint['model'])
         print('Recover complete. Current epoch = #%d; best metrics = %s.' % (checkpoint['epoch_index'], checkpoint['best_metrics']))
 
-
+    kp_net_checkpoint = torch.load('../results_kp/train_kp_shapenet55_Log_2024_10_22_11_08_37/checkpoints/ckpt-best.pth')   # 128 kp 点的 checkpoints
+    kp_model.load_state_dict(kp_net_checkpoint['model'])    # ???
     ##################
     # Training Manager
     ##################
@@ -205,7 +211,7 @@ def train_net(cfg):
     manager = Manager(model, cfg)
 
     # Start training
-    manager.train(model, train_data_loader, val_data_loader, cfg)
+    manager.train(model, kp_model, train_data_loader, val_data_loader, cfg)
 
 
 def test_net(cfg):

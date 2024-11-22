@@ -7,11 +7,9 @@ key points generate(3D GS)
 ==============================================================
 
 Author: Fan Quanjiang
-Date: 2024.11.19
-version: 0.70
-note: 分开预测均值、方差、四元数；增加冻结 cov 相关层，尝试解决 v0.61 无法先训 means 再一起训 
-
-next: 加一个loss, 所有点和gt的; decoder时候降采样一次加一次全局特征, cat两次; 用 so3 预测旋转矩阵
+Date: 2024.11.15
+version: 0.7
+note: 协方差矩阵预测方式 四元数   分开预测均值、方差和四元数   下一步改进: 加一个loss, 所有点和gt的; decoder时候降采样一次加一次全局特征, cat两次; 用 so3 预测旋转矩阵
 ==============================================================
 '''
 import torch
@@ -186,8 +184,8 @@ class KP_3DGS(nn.Module):
         super(KP_3DGS,self).__init__()
         self.point_number = k # 64
         
-        self.encoder_means = Encoder()
-        self.encoder_covs = Encoder()
+        self.encoder = Encoder()
+        
         # self.layer1 = conv1d(3,16)
         # self.layer2 = conv1d(16,64)
         # self.layer3 = conv1d(64,256)
@@ -202,67 +200,42 @@ class KP_3DGS(nn.Module):
         self.get_cov3 = mlp(256,self.point_number*7)
         # self.sample = Sample_with_clipping(num_samples = 30)
 
-    def freeze_cov_layers(self):
-        """Freeze the cov-related layers."""
-        for param in self.encoder_covs.parameters():
-            param.requires_grad = False
-        for param in self.get_cov1.parameters():
-            param.requires_grad = False
-        for param in self.get_cov2.parameters():
-            param.requires_grad = False
-        for param in self.get_cov3.parameters():
-            param.requires_grad = False
+        # self.pp_point3 = mlp(256,self.point_number)
+        
     
-    def unfreeze_cov_layers(self):
-        """Unfreeze the cov-related layers."""
-        for param in self.encoder_covs.parameters():
-            param.requires_grad = True
-        for param in self.get_cov1.parameters():
-            param.requires_grad = True
-        for param in self.get_cov2.parameters():
-            param.requires_grad = True
-        for param in self.get_cov3.parameters():
-            param.requires_grad = True
-    
-    
-
     def forward(self,partial):
         """
         Args:
             partial: (B, 3, N)
         """
         # encoder
-        partial_means, partial_feat_means = self.encoder_means(partial)
-        partial_covs, partial_feat_covs = self.encoder_covs(partial)  # (B, 1024+512, 512)
-        # decoder
-        partial_feat_means = partial_feat_means.permute(0,2,1) # (B, 512, 1024+512)
-        means_feat = self.get_means1(partial_feat_means) # (B, N, 512)
+        partial_, partial_feat = self.encoder(partial)
+        partial_feat = partial_feat.permute(0,2,1) # (B, 512, 1024+512)
+        
+        means_feat = self.get_means1(partial_feat) # (B, N, 512)
         means_feat = F.dropout(means_feat,p = 0.05)
         means_feat = self.get_means2(means_feat)  # (B, N, 256)
         means_feat = F.dropout(means_feat,p = 0.02)
-        means = self.get_means3(means_feat)  # (B, N, 64*3)   mean_x mean_y mean_z σ1 σ2 σ3 q0 q1 q2 q3 q4
-        means = torch.mean(means,dim = 1)  # (B, 64*3)
-        means = means.reshape((-1, self.point_number, 3)) # (B, 64, 3)   mean_x mean_y mean_z σ1 σ2 σ3 q0 q1 q2 q3 q4
+        means_feat = self.get_means3(means_feat)  # (B, N, 64*3)   mean_x mean_y mean_z
+        means_feat = torch.mean(means_feat,dim = 1)  # (B, 64*3)
+        means = means_feat.reshape((-1, self.point_number, 3)) # (B, 64, 3)   mean_x mean_y mean_z
         
-        
-        partial_feat_covs = partial_feat_covs.permute(0,2,1) # (B, 512, 1024+512)
-        cov_feat = self.get_cov1(partial_feat_covs) # (B, N, 512)
+        cov_feat = self.get_cov1(partial_feat) # (B, N, 512)
         cov_feat = F.dropout(cov_feat,p = 0.05)
         cov_feat = self.get_cov2(cov_feat)  # (B, N, 256)
         cov_feat = F.dropout(cov_feat,p = 0.02)
-        cov_feat = self.get_cov3(cov_feat)  # (B, N, 64*7)   σ1 σ2 σ3 q0 q1 q2 q3 q4
+        cov_feat = self.get_cov3(cov_feat)  # (B, N, 64*7)   mean_x mean_y mean_z
         cov_feat = torch.mean(cov_feat,dim = 1)  # (B, 64*7)
-        var_q = cov_feat.reshape((-1, self.point_number, 7)) # (B, 64, 7)   σ1 σ2 σ3 q0 q1 q2 q3 q4
+        var_q = cov_feat.reshape((-1, self.point_number, 7)) # (B, 64, 7)   mean_x mean_y mean_z
         
-        # get cov_mat
+        
+        
         B, N, _ = means.shape
-        
-        var_element = var_q[:, :, :3] # (B, 64, 3) σ1 σ2 σ3
+        # means = kp_gs[..., :3]  # (B, 64, 3) mean_x mean_y mean_z
+        var_element = var_q[:, :, :3]   # (B, 64, 3) σ1 σ2 σ3
         epsilon = 1e-5
         var_element = torch.abs(var_element) + epsilon
-        
         q = var_q[:, :, 3:]  # (B, 64, 4)  q0 q1 q2 q3 q4
-        
         q_norm = normalize_quaternions(q) # (B, 64, 4)
         R = quaternion_2_rotation_matrix(q_norm)  # (B, N, 3, 3)
         
@@ -272,13 +245,12 @@ class KP_3DGS(nn.Module):
         #         # 取方差向量并将其填充到对角线上
         #         diag = torch.diag(var_element[b, n])
         #         var_mat[b, n] = diag
-        
         var_mat = torch.diag_embed(var_element)
         
-        # var_mat_squared = torch.matmul(var_mat, var_mat)  # 方差矩阵平方
-        cov_mat = torch.matmul(R, torch.matmul(var_mat, R.transpose(-2, -1)))  # (B, N, 3, 3)
+        var_mat_squared = torch.matmul(var_mat, var_mat)  # 方差矩阵平方
+        cov_mat = torch.matmul(R, torch.matmul(var_mat_squared, R.transpose(-2, -1)))  # (B, N, 3, 3)
         
-        # sample
+        
         sample_num = 30
         sample_points = sample_with_clipping(means, cov_mat, sample_num)  # # (B, N, sample_num, 3)
         
@@ -341,11 +313,7 @@ class kp_3dgs_loss(nn.Module):
 
         cd2 = torch.sum(torch.stack(cd2_list))
 
-        
-        
-        B1,N1,_ = means.shape
-        gt1 = fps_subsample(gt,N1)
-        cd1 = CD(means, gt1)
+        cd1 = CD(means, gt)
         
 
         return cd1*1e3 + cd2*1e3, cd1*1e3 , cd2*1e3

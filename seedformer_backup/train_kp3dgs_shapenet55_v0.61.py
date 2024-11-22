@@ -8,7 +8,6 @@ Train ket points net
 
 Author:
 Date:
-note: 前 k 轮冻结训练 cov 的层
 cmd: CUDA_VISIBLE_DEVICES=6,7 python3 train_kp3dgs_shapenet55.py
      CUDA_VISIBLE_DEVICES=4,5,6,7 python3 train_kp3dgs_shapenet55.py
 
@@ -212,18 +211,6 @@ class Manager_kp:
 
         init_epoch = 0
         steps = 0
-        
-        # freeze_cov_layers
-        # --------------------------------------------------------------------------------
-        print("Freezing cov-related layers for the first 50 epochs...")
-        model.module.freeze_cov_layers()  # 假设 model 有 freeze_cov_layers 方法
-        self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
-                                           lr=cfg.TRAIN.LEARNING_RATE,
-                                           weight_decay=cfg.TRAIN.WEIGHT_DECAY,
-                                           betas=cfg.TRAIN.BETAS)
-        # --------------------------------------------------------------------------------
-        
-
 
         # training record file
         print('Training Record:')
@@ -235,19 +222,6 @@ class Manager_kp:
         for epoch_idx in range(init_epoch + 1, cfg.TRAIN.N_EPOCHS + 1):
 
             self.epoch = epoch_idx
-            
-            # unfreeze_cov_layers
-            # ----------------------------------------------------------------------------
-            if epoch_idx == 10:
-                print(f"[Epoch {epoch_idx}] Unfreezing cov-related layers...")
-                model.module.unfreeze_cov_layers()  # 假设 model 有 unfreeze_cov_layers 方法
-
-                # Reinitialize optimizer to include unfrozen parameters
-                self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
-                                                   lr=cfg.TRAIN.LEARNING_RATE,
-                                                   weight_decay=cfg.TRAIN.WEIGHT_DECAY,
-                                                   betas=cfg.TRAIN.BETAS)
-            # ----------------------------------------------------------------------------
 
             # timer
             epoch_start_time = time.time()
@@ -309,13 +283,13 @@ class Manager_kp:
                 
                 
                 
-                if epoch_idx < 10:
-                    loss_total = means_cd_loss()(means, gt)
-                else:
-                    loss_total, mean_loss, kp_loss  = kp_3dgs_loss()(means, sample_points, gt)
+                # if epoch_idx < 30:
+                #     loss_total = means_cd_loss()(means, gt)
+                # else:
+                #     loss_total, mean_loss, kp_loss  = kp_3dgs_loss()(means, sample_points, gt)
 
-                # loss_total, mean_loss, kp_loss  = kp_3dgs_loss()(means, sample_points, gt)
-
+                loss_total, mean_loss, kp_loss  = kp_3dgs_loss()(means, sample_points, gt)
+                
 
                 self.optimizer.zero_grad()
                 loss_total.backward()
@@ -326,15 +300,15 @@ class Manager_kp:
                 n_itr = (epoch_idx - 1) * n_batches + batch_idx
 
                 # training record
-                if epoch_idx < 10:
-                    message = '{:d} loss_total: {:.4f} '.format(n_itr, loss_total.item())
-                    self.train_record(message, show_info=True)
-                else:
-                    message = '{:d} loss_total:  {:.4f} mean_loss: {:.4f} kp_loss: {:.4f} '.format(n_itr, loss_total.item(), mean_loss.item(), kp_loss.item(), )
-                    self.train_record(message, show_info=True)
+                # if epoch_idx < 30:
+                #     message = '{:d} loss_total: {:.4f} '.format(n_itr, loss_total.item())
+                #     self.train_record(message, show_info=True)
+                # else:
+                #     message = '{:d} loss_total:  {:.4f} mean_loss: {:.4f} kp_loss: {:.4f} '.format(n_itr, loss_total.item(), mean_loss.item(), kp_loss.item(), )
+                #     self.train_record(message, show_info=True)
                 
-                # message = '{:d} loss_total: {:.4f} kp_loss: {:.4f} mean_loss: {:.4f}'.format(n_itr, loss_total.item(), kp_loss.item(), mean_loss.item())
-                # self.train_record(message, show_info=True)
+                message = '{:d} loss_total: {:.4f} kp_loss: {:.4f} mean_loss: {:.4f}'.format(n_itr, loss_total.item(), kp_loss.item(), mean_loss.item())
+                self.train_record(message, show_info=True)
                 
                 
 
