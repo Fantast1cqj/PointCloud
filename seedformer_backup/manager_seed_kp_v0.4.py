@@ -15,7 +15,7 @@ SeedFormer: Point Cloud Completion + key poins cross attention
 
 Author:
 Date:
-version: 0.5
+
 ==============================================================
 '''
 
@@ -117,7 +117,7 @@ class Manager:
         return partial, gt
 
 
-    def train(self, model, kp3dgs_model, train_data_loader, val_data_loader, cfg):
+    def train(self, model, kp_model, train_data_loader, val_data_loader, cfg):
 
         init_epoch = 0
         steps = 0
@@ -137,7 +137,7 @@ class Manager:
             epoch_start_time = time.time()
 
             model.train()   # 设置为训练模式
-            kp3dgs_model.eval() # 设置 kp3dgs_Model
+            kp_model.eval() # 设置 kp_model
             
 
             # Update learning rate
@@ -159,20 +159,18 @@ class Manager:
 
                 # unpack data
                 partial, gt = self.unpack_data(data)    # 获取 partial 点云  partial shape: torch.Size([48, 2048, 3])
-                # gt_downsample = fps_subsample(gt,1024).permute(0,2,1)
-                partial = partial.permute(0,2,1)
+                gt_downsample = fps_subsample(gt,1024).permute(0,2,1)
+                
                 
                 with torch.no_grad():
-                    means, kp_3dgs, sample_points_re = kp3dgs_model(partial)    # ([48, 3, 2048])
-                
+                    kp,pp = kp_model(gt_downsample)
                 
                 # print("partial shape:", partial.shape) # torch.Size([48, 2048, 3])
                 # print("gt_downsample shape:", gt_downsample.shape) # torch.Size([48, 3, 1024])
                 # print("kp shape:", kp.shape) # torch.Size([48, 128, 3])
                 # exit()
-                partial = partial.permute(0,2,1)
 
-                pcds_pred = model(partial, sample_points_re)    # 加 sample_points_res (B, 64*30, 3)        partial.shape ([48, 2048, 3])
+                pcds_pred = model(partial, kp)    # 加 key points (B, 128, 3)
 
                 loss_total, losses, gts = get_loss(pcds_pred, partial, gt, sqrt=True)  # loss function
                 # losses: [cdc, cd1, cd2, cd3, partial_matching] cdc: seed 与 下采样gt的cd  cd3: 补全的完整点云与gt的cd
@@ -212,37 +210,36 @@ class Manager:
                 (epoch_idx, cfg.TRAIN.N_EPOCHS, learning_rate, epoch_end_time - epoch_start_time, ['%.4f' % l for l in [avg_cdc, avg_cd1, avg_cd2, avg_cd3, avg_partial]]))
 
             # Validate the current model
-            if epoch_idx % 2 == 0:
-                cd_eval = self.validate(cfg, model=model, kp3dgs_model = kp3dgs_model, val_data_loader=val_data_loader)
-                self.train_record('Testing scores = {:.4f}'.format(cd_eval))
+            cd_eval = self.validate(cfg, model=model, kp_model = kp_model, val_data_loader=val_data_loader)
+            self.train_record('Testing scores = {:.4f}'.format(cd_eval))
 
-                # Save checkpoints
+            # Save checkpoints
+            if cd_eval < self.best_metrics:
+                self.best_epoch = epoch_idx
+                file_name = 'ckpt-best.pth' if cd_eval < self.best_metrics else 'ckpt-epoch-%03d.pth' % epoch_idx
+                output_path = os.path.join(cfg.DIR.CHECKPOINTS, file_name)
+                torch.save({
+                    'epoch_index': epoch_idx,
+                    'best_metrics': cd_eval,
+                    'model': model.state_dict()
+                }, output_path)
+
+                print('Saved checkpoint to %s ...' % output_path)
                 if cd_eval < self.best_metrics:
-                    self.best_epoch = epoch_idx
-                    file_name = 'ckpt-best.pth' if cd_eval < self.best_metrics else 'ckpt-epoch-%03d.pth' % epoch_idx
-                    output_path = os.path.join(cfg.DIR.CHECKPOINTS, file_name)
-                    torch.save({
-                        'epoch_index': epoch_idx,
-                        'best_metrics': cd_eval,
-                        'model': model.state_dict()
-                    }, output_path)
-
-                    print('Saved checkpoint to %s ...' % output_path)
-                    if cd_eval < self.best_metrics:
-                        self.best_metrics = cd_eval
+                    self.best_metrics = cd_eval
 
         # training end
         self.train_record_file.close()
         self.test_record_file.close()
 
 
-    def validate(self, cfg, model=None, kp3dgs_model = None, val_data_loader=None, outdir=None):
+    def validate(self, cfg, model=None, kp_model = None, val_data_loader=None, outdir=None):
         # Enable the inbuilt cudnn auto-tuner to find the best algorithm to use
         torch.backends.cudnn.benchmark = True
 
         # Switch models to evaluation mode
         model.eval()
-        kp3dgs_model.eval()
+        kp_model.eval()
 
         n_samples = len(val_data_loader)
         test_losses = AverageMeter(['cdc', 'cd1', 'cd2', 'cd3', 'partial_matching'])
@@ -259,12 +256,11 @@ class Manager:
 
                 # unpack data
                 partial, gt = self.unpack_data(data)
-                partial = partial.permute(0,2,1)
-                # gt_downsample = fps_subsample(gt,1024).permute(0,2,1)
-                means, kp_3dgs, sample_points_re = kp3dgs_model(partial)
-                partial = partial.permute(0,2,1)
+                gt_downsample = fps_subsample(gt,1024).permute(0,2,1)
+                kp,pp = kp_model(gt_downsample)
+
                 # forward
-                pcds_pred = model(partial.contiguous(), sample_points_re.contiguous())
+                pcds_pred = model(partial.contiguous(), kp.contiguous())
                 loss_total, losses, _ = get_loss(pcds_pred, partial, gt, sqrt=True)
 
                 # get metrics
@@ -388,7 +384,7 @@ class Manager:
 
         return test_losses.avg(3)
 
-    def test_shapenet55(self, cfg, model=None, kp3dgs_model = None, test_data_loader=None, outdir=None, mode=None):
+    def test_shapenet55(self, cfg, model=None, kp_model = None, test_data_loader=None, outdir=None, mode=None):
         """
         Testing Method for dataset shapenet-55/34
         """
@@ -409,7 +405,7 @@ class Manager:
 
         # Switch models to evaluation mode
         model.eval()   # 将模型设置为评估模式
-        kp3dgs_model.eval()
+        kp_model.eval()
 
         n_samples = len(test_data_loader)
         test_losses = AverageMeter(['cdc', 'cd1', 'cd2', 'cd3', 'partial_matching'])
@@ -461,13 +457,11 @@ class Manager:
                     # file_path = os.path.join(base_path, file_name)
                     # np.save(file_path, partial_cpu)     # 保存所有
                     # # print(f'Array {ii} is saved to {file_path}')
-                    partial = partial.permute(0,2,1)
                     with torch.no_grad():
-                        # kp,pp = kp_model(gt_downsample)
-                        means, kp_3dgs, sample_points_re = kp3dgs_model(partial)
+                        kp,pp = kp_model(gt_downsample)
                     
-                    partial = partial.permute(0,2,1)
-                    pcds_pred = model(partial.contiguous(), sample_points_re.contiguous())
+                    
+                    pcds_pred = model(partial.contiguous(), kp.contiguous())
                     loss_total, losses, _ = get_loss(pcds_pred, partial, gt, sqrt=False) # L2
 
                     # get loss

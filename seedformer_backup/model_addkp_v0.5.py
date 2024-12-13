@@ -7,8 +7,8 @@ SeedFormer: Point Cloud Completion
 ==============================================================
 
 Author:
-Date: 2024-12-11
-version: 0.6
+Date: 2024-12-6
+version: 0.5
 note: seedformer 输入加 64 个 3DGS 每个采样30个点   修改： FeatureExtractor
 next: 引入点云法向量特征
       1. 输入点云直接估计法向量，得到 6 维特征 (x,y,z,nx,ny,nz) 再进入网路
@@ -134,16 +134,30 @@ class FeatureExtractor(nn.Module):
         self.partial_transformer_1 = vTransformer(128, dim=64, n_knn=n_knn)
         self.partial_sa_module_2 = PointNet_SA_Module_KNN(128, 16, 128, [128, 256], group_all=False, if_bn=False, if_idx=True)
         self.partial_transformer_2 = vTransformer(256, dim=64, n_knn=n_knn)
-        self.partial_groupall = PointNet_SA_Module_KNN(None, None, 256, [512, out_dim], group_all=True, if_bn=False)
-
+        self.partial_groupall = PointNet_SA_Module_KNN(None, None, 256, [256, 256], group_all=True, if_bn=False)
+        self.mlp_1 = MLP_Res(in_dim=512, hidden_dim=256, out_dim=256)
 
         # Gaussian sampled cloud feature extractor
-        self.gaussian_sa_module_1 = PointNet_SA_Module_KNN(512, 16, 3, [32, 64], group_all=False, if_bn=False, if_idx=True)
-        self.gaussian_transformer_1 = vTransformer(64, dim=64, n_knn=n_knn)
-        self.gaussian_sa_module_2 = PointNet_SA_Module_KNN(128, 16, 64, [64, 128], group_all=False, if_bn=False, if_idx=True)
-        self.gaussian_transformer_2 = vTransformer(128, dim=64, n_knn=n_knn)
+        self.gaussian_sa_module_1 = PointNet_SA_Module_KNN(512, 16, 3, [64, 128], group_all=False, if_bn=False, if_idx=True)
+        self.gaussian_transformer_1 = vTransformer(128, dim=64, n_knn=n_knn)
+        self.gaussian_sa_module_2 = PointNet_SA_Module_KNN(128, 16, 128, [128, 256], group_all=False, if_bn=False, if_idx=True)
+        self.gaussian_transformer_2 = vTransformer(256, dim=64, n_knn=n_knn)
+        self.gaussian_groupall = PointNet_SA_Module_KNN(None, None, 256, [256, 256], group_all=True, if_bn=False)
+        self.mlp_2 = MLP_Res(in_dim=512, hidden_dim=256, out_dim=256)
 
-  
+
+        self.fusion_mlp = nn.Sequential(
+            nn.Conv1d(256 + 256, 512, kernel_size=1),
+            nn.ReLU(),
+            nn.Conv1d(512, 256, kernel_size=1)
+        )
+
+        # Final downsampling to global feature
+        self.fusion_sa_module_1 = PointNet_SA_Module_KNN(128, 8, 256, [256, 256], group_all=False, if_bn=False, if_idx=True)
+        self.fusion_transformer_1 = vTransformer(256, dim=64, n_knn=8)
+        self.fusion_groupall = PointNet_SA_Module_KNN(None, None, 256, [512, out_dim], group_all=True, if_bn=False)
+        
+        
 
     def forward(self, partial_cloud, gs_points):
         """
@@ -154,40 +168,45 @@ class FeatureExtractor(nn.Module):
         Returns:
             l3_points: (B, out_dim, 1)
         """
+        # Process partial cloud
+        l0_xyz_partial, l0_points_partial = partial_cloud, partial_cloud
+        
+        l1_xyz_partial, l1_points_partial, _ = self.partial_sa_module_1(l0_xyz_partial, l0_points_partial)
+        l1_points_partial = self.partial_transformer_1(l1_points_partial, l1_xyz_partial)
+        
+        l2_xyz_partial, l2_points_partial, _ = self.partial_sa_module_2(l1_xyz_partial, l1_points_partial)  # (B,3,128)   (B,256,128)
+        l2_points_partial = self.partial_transformer_2(l2_points_partial, l2_xyz_partial) # (B, 256, 128)
+        
+        l3_xyz_partial, partial_gfeat = self.partial_groupall(l2_xyz_partial, l2_points_partial) # global feature (B, 256, 1)
+        l2_points_partial = torch.cat([l2_points_partial, partial_gfeat.repeat((1, 1, l2_points_partial.size(2)))], 1)  # (B, 512, 128)
+        l2_points_partial = self.mlp_1(l2_points_partial)    # (B,256,128)
+
         # Process Gaussian sampled points
-        l0_xyz_gs = gs_points     # (B, 3, 1920)
-        l0_points_gs = gs_points  # (B, 3, 1920)
+        l0_xyz_gs, l0_points_gs = gs_points, gs_points
         
-        l1_xyz_gs, l1_points_gs, _ = self.gaussian_sa_module_1(l0_xyz_gs, l0_points_gs)  # (B, 3, 512)  (B, 64, 512)
-        l1_points_gs = self.gaussian_transformer_1(l1_points_gs, l1_xyz_gs)  # (B, 64, 512)
+        l1_xyz_gs, l1_points_gs, _ = self.gaussian_sa_module_1(l0_xyz_gs, l0_points_gs)
+        l1_points_gs = self.gaussian_transformer_1(l1_points_gs, l1_xyz_gs)
         
-        l2_xyz_gs, l2_points_gs, _ = self.gaussian_sa_module_2(l1_xyz_gs, l1_points_gs) # (B, 3, 128)   (B, 128, 128)
-        l2_points_gs = self.gaussian_transformer_2(l2_points_gs, l2_xyz_gs)   # (B, 128, 128)
+        l2_xyz_gs, l2_points_gs, _ = self.gaussian_sa_module_2(l1_xyz_gs, l1_points_gs) # (B,3,128)   (B,256,128)
+        l2_points_gs = self.gaussian_transformer_2(l2_points_gs, l2_xyz_gs)   # (B,256,128)
+        
+        l3_xyz_gs, gs_gfeat = self.partial_groupall(l2_xyz_gs, l2_points_gs) # global feature (B, 256, 1)
+        l2_points_gs = torch.cat([l2_points_gs, gs_gfeat.repeat((1, 1, l2_points_gs.size(2)))], 1)  # (B, 512, 128)
+        l2_points_gs = self.mlp_2(l2_points_gs)      # (B,256,128)
+
+
+        # Fusion
+        l0_points_fused = torch.cat([l2_points_partial, l2_points_gs], dim=2)  # (B,256,256) = cat((B,256,128), (B,256,128))
+        l0_xyz_fused = torch.cat([l2_xyz_partial, l2_xyz_gs], dim=2)  # (B,3,256) = cat((B,3,128), (B,3,128))
+        
+        l1_xyz_fused, l1_points_fused, _ = self.fusion_sa_module_1(l0_xyz_fused, l0_points_fused)  # (B, 3, 128) (B, 256, 128)
+        l1_points_fused = self.fusion_transformer_1(l1_points_fused, l1_xyz_fused)  # (B, 256, 128)
+        
+        _, feat_all = self.fusion_groupall(l1_xyz_fused, l1_points_fused)
         
 
-        
-        # fuse partial cloud and GS cloud
-        fusion1 = torch.cat((partial_cloud, l2_xyz_gs), dim=2)  # (B, 3, 2176)
-        l0_xyz_fusion1 = fusion1
-        l0_point_fusion1 = fusion1
-    
-        l1_xyz_fusion1, l1_points_fusion1, _ = self.partial_sa_module_1(l0_xyz_fusion1, l0_point_fusion1) # (B, 3, 512)   (B, 128, 512)
-        l1_points_fusion1 = self.partial_transformer_1(l1_points_fusion1, l1_xyz_fusion1)  # (B, 128, 512)
-        
-        
-        l0_xyz_fusion2 = torch.cat((l1_xyz_fusion1, l2_xyz_gs), dim=2) # (B, 3, 640)
-        l0_point_fusion2 = torch.cat((l1_points_fusion1, l2_points_gs), dim=2) # (B, 128, 640)
-        
-        l1_xyz_fusion2, l1_points_fusion2, _ = self.partial_sa_module_2(l0_xyz_fusion2, l0_point_fusion2)  # (B, 3, 128)   (B, 256, 128)
-        l1_points_fusion2 = self.partial_transformer_2(l1_points_fusion2, l1_xyz_fusion2) # (B, 256, 128)
-        
-        l2_xyz_fusion2, l2_points_fusion2 = self.partial_groupall(l1_xyz_fusion2, l1_points_fusion2) # global feature (B, 256, 1)
 
-        # print("l2_points_fusion2 shape:", l2_points_fusion2.shape)   # ([24, 256, 1])
-        # print("l1_xyz_fusion2 shape:", l1_xyz_fusion2.shape)   # ([24, 3, 128])
-        # print("l1_points_fusion2 shape:", l1_points_fusion2.shape)   # ([24, 256, 128])
-        # exit()
-        return l2_points_fusion2, l1_xyz_fusion2, l1_points_fusion2
+        return feat_all, l1_xyz_fused, l1_points_fused
 
 
 # 加 cross attention

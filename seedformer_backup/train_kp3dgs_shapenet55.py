@@ -7,8 +7,8 @@ Train ket points net
 ==============================================================
 
 Author:
+version: v 0.72
 Date:
-note: 前 k 轮冻结训练 cov 的层
 cmd: CUDA_VISIBLE_DEVICES=6,7 python3 train_kp3dgs_shapenet55.py
      CUDA_VISIBLE_DEVICES=4,5,6,7 python3 train_kp3dgs_shapenet55.py
 
@@ -99,7 +99,7 @@ def ShapeNet55Config():
     __C.DIR.OUT_PATH                                 = '/home/ps/wcw_1999/codes/seedformer-master/results_kp3dgs'
     __C.DIR.TEST_PATH                                = '/home/ps/wcw_1999/codes/seedformer-master/test_kp3dgs'
     # __C.CONST.DEVICE                                 = '0, 1'
-    __C.CONST.DEVICE                                 = ' 4,5,6,7'   # cmd: CUDA_VISIBLE_DEVICES=6,7 python3 train_kp3dgs_shapenet55.py 
+    __C.CONST.DEVICE                                 = ' 6,7'   # cmd: CUDA_VISIBLE_DEVICES=6,7 python3 train_kp3dgs_shapenet55.py 
     # __C.CONST.WEIGHTS                                = None # 'ckpt-best.pth'  # specify a path to run test and inference
 
     #
@@ -112,11 +112,11 @@ def ShapeNet55Config():
     # Train
     #
     __C.TRAIN                                        = edict()
-    __C.TRAIN.BATCH_SIZE                             = 420 # 320~480
+    __C.TRAIN.BATCH_SIZE                             = 160 # 320~480
     __C.TRAIN.N_EPOCHS                               = 400
-    __C.TRAIN.LEARNING_RATE                          = 0.003
+    __C.TRAIN.LEARNING_RATE                          = 0.002
     __C.TRAIN.LR_DECAY                               = 100
-    __C.TRAIN.WARMUP_EPOCHS                          = 40
+    __C.TRAIN.WARMUP_EPOCHS                          = 20
     __C.TRAIN.GAMMA                                  = .5
     __C.TRAIN.BETAS                                  = (.9, .999)
     __C.TRAIN.WEIGHT_DECAY                           = 0
@@ -212,18 +212,6 @@ class Manager_kp:
 
         init_epoch = 0
         steps = 0
-        
-        # freeze_cov_layers
-        # --------------------------------------------------------------------------------
-        print("Freezing cov-related layers for the first 50 epochs...")
-        model.module.freeze_cov_layers()  # 假设 model 有 freeze_cov_layers 方法
-        self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
-                                           lr=cfg.TRAIN.LEARNING_RATE,
-                                           weight_decay=cfg.TRAIN.WEIGHT_DECAY,
-                                           betas=cfg.TRAIN.BETAS)
-        # --------------------------------------------------------------------------------
-        
-
 
         # training record file
         print('Training Record:')
@@ -235,19 +223,6 @@ class Manager_kp:
         for epoch_idx in range(init_epoch + 1, cfg.TRAIN.N_EPOCHS + 1):
 
             self.epoch = epoch_idx
-            
-            # unfreeze_cov_layers
-            # ----------------------------------------------------------------------------
-            if epoch_idx == 10:
-                print(f"[Epoch {epoch_idx}] Unfreezing cov-related layers...")
-                model.module.unfreeze_cov_layers()  # 假设 model 有 unfreeze_cov_layers 方法
-
-                # Reinitialize optimizer to include unfrozen parameters
-                self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()),
-                                                   lr=cfg.TRAIN.LEARNING_RATE,
-                                                   weight_decay=cfg.TRAIN.WEIGHT_DECAY,
-                                                   betas=cfg.TRAIN.BETAS)
-            # ----------------------------------------------------------------------------
 
             # timer
             epoch_start_time = time.time()
@@ -281,7 +256,7 @@ class Manager_kp:
                 
                 
                 gt_downsample = fps_subsample(gt,1024).permute(0,2,1)  # (B, 3, 1024)
-                means, sample_points = model(partial)
+                means, sample_points, sample_points_re= model(partial)
                 # print("kp size: ", kp.shape)    # kp size: torch.Size([120, 24, 3])
                 # exit()
                 
@@ -309,13 +284,13 @@ class Manager_kp:
                 
                 
                 
-                if epoch_idx < 10:
-                    loss_total = means_cd_loss()(means, gt)
-                else:
-                    loss_total, mean_loss, kp_loss  = kp_3dgs_loss()(means, sample_points, gt)
+                # if epoch_idx < 30:
+                #     loss_total = means_cd_loss()(means, gt)
+                # else:
+                #     loss_total, mean_loss, kp_loss  = kp_3dgs_loss()(means, sample_points, gt)
 
-                # loss_total, mean_loss, kp_loss  = kp_3dgs_loss()(means, sample_points, gt)
-
+                loss_total, mean_loss, sample_knn_loss, sample_loss  = kp_3dgs_loss()(means, sample_points, sample_points_re, gt)
+                
 
                 self.optimizer.zero_grad()
                 loss_total.backward()
@@ -326,15 +301,15 @@ class Manager_kp:
                 n_itr = (epoch_idx - 1) * n_batches + batch_idx
 
                 # training record
-                if epoch_idx < 10:
-                    message = '{:d} loss_total: {:.4f} '.format(n_itr, loss_total.item())
-                    self.train_record(message, show_info=True)
-                else:
-                    message = '{:d} loss_total:  {:.4f} mean_loss: {:.4f} kp_loss: {:.4f} '.format(n_itr, loss_total.item(), mean_loss.item(), kp_loss.item(), )
-                    self.train_record(message, show_info=True)
+                # if epoch_idx < 30:
+                #     message = '{:d} loss_total: {:.4f} '.format(n_itr, loss_total.item())
+                #     self.train_record(message, show_info=True)
+                # else:
+                #     message = '{:d} loss_total:  {:.4f} mean_loss: {:.4f} kp_loss: {:.4f} '.format(n_itr, loss_total.item(), mean_loss.item(), kp_loss.item(), )
+                #     self.train_record(message, show_info=True)
                 
-                # message = '{:d} loss_total: {:.4f} kp_loss: {:.4f} mean_loss: {:.4f}'.format(n_itr, loss_total.item(), kp_loss.item(), mean_loss.item())
-                # self.train_record(message, show_info=True)
+                message = '{:d} loss_total: {:.4f} sample_knn_loss: {:.4f} mean_loss: {:.4f}   sample_loss: {:.4f}'.format(n_itr, loss_total.item(), sample_knn_loss.item(), mean_loss.item(), sample_loss.item())
+                self.train_record(message, show_info=True)
                 
                 
 
@@ -439,7 +414,7 @@ def train_kp(cfg):
     model = KP_3DGS(k = 64)
     if torch.cuda.is_available():
         # model = torch.nn.DataParallel(model).cuda()
-        model = torch.nn.DataParallel(model, device_ids=[0,1,2,3]).cuda()  # 设置多 GPU？
+        model = torch.nn.DataParallel(model, device_ids=[0,1]).cuda()  # 设置多 GPU？
     
     ####################### training
     manager = Manager_kp(model, cfg)

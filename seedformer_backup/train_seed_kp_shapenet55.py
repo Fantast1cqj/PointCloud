@@ -8,6 +8,7 @@ SeedFormer + key poins
 
 Author:
 Date:
+version: 0.5
 cmd: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 python3 train_seed_kp_shapenet55.py 
      CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 python3 train_seed_kp_shapenet55.py --test --pretrained train_seed_kp_shapenet55_Log_2024_11_12_13_19_06
 ==============================================================
@@ -39,13 +40,13 @@ TRAIN_NAME = os.path.splitext(os.path.basename(__file__))[0]
 parser = argparse.ArgumentParser()
 parser.add_argument('--desc', type=str, default='Training/Testing SeedFormer', help='description')
 parser.add_argument('--net_model', type=str, default='model_addkp', help='Import module.')
-parser.add_argument('--kp_net_model', type=str, default='key_point_net', help='Import kp module.')
+parser.add_argument('--kp3dgs_net_model', type=str, default='model_kp_3dgs', help='Import kp module.')
 parser.add_argument('--arch_model', type=str, default='seedformer_dim128', help='Model to use.')
 parser.add_argument('--test', dest='test', help='Test neural networks', action='store_true')
 parser.add_argument('--inference', dest='inference', help='Inference for benchmark', action='store_true')
 parser.add_argument('--output', type=int, default=False, help='Output testing results.')       # 是否输出点云
 parser.add_argument('--pretrained', type=str, default='', help='Pretrained path for testing.')
-parser.add_argument('--mode', type=str, default='easy', help='Testing mode [easy, median, hard].')  # 测试难度
+parser.add_argument('--mode', type=str, default='median', help='Testing mode [easy, median, hard].')  # 测试难度
 args = parser.parse_args()
 
 
@@ -91,7 +92,7 @@ def ShapeNet55Config():
     __C.DIR.OUT_PATH                                 = '../results'
     __C.DIR.TEST_PATH                                = '../test'
     # __C.CONST.DEVICE                                 = '0, 1'
-    __C.CONST.DEVICE                                 = '0, 1, 2, 3'
+    __C.CONST.DEVICE                                 = '6, 7'
     # __C.CONST.WEIGHTS                                = None # 'ckpt-best.pth'  # specify a path to run test and inference
 
     #
@@ -104,7 +105,7 @@ def ShapeNet55Config():
     # Train
     #
     __C.TRAIN                                        = edict()
-    __C.TRAIN.BATCH_SIZE                             = 150     # 48
+    __C.TRAIN.BATCH_SIZE                             = 48     # 48
     __C.TRAIN.N_EPOCHS                               = 400
     __C.TRAIN.LEARNING_RATE                          = 0.001
     __C.TRAIN.LR_DECAY                               = 100
@@ -191,18 +192,18 @@ def train_net(cfg):
     #######################
 
     Model = import_module(args.net_model)  # 在当前目录下找 model_addkp.py
-    kp_Model = import_module(args.kp_net_model) # 在当前目录下找 key_point_net.py
+    kp3dgs_Model = import_module(args.kp3dgs_net_model) # 在当前目录下找 model_kp_3dgs.py
     # print(Model)    # <module 'model_addkp' from '/home/ps/wcw_1999/codes/seedformer-master/codes/model_addkp.py'>
     # print(kp_Model) # <module 'key_point_net' from '/home/ps/wcw_1999/codes/seedformer-master/codes/key_point_net.py'>
     # quit()
     model = Model.__dict__[args.arch_model](up_factors=cfg.NETWORK.UPSAMPLE_FACTORS)   # args.arch_model = seedformer_dim128 seedformer_dim128 在 model_addkp.py 中
-    kp_model = kp_Model.__dict__['kp_128']()
+    kp3dgs_model = kp3dgs_Model.__dict__['KP_3DGS_640']()
     
     if torch.cuda.is_available():
-        model = torch.nn.DataParallel(model).cuda()
-        kp_model = torch.nn.DataParallel(kp_model).cuda()
-        # model = torch.nn.DataParallel(model, device_ids=[0, 1, 2])   # 设置多 GPU？
-
+        # model = torch.nn.DataParallel(model).cuda()
+        # kp3dgs_model = torch.nn.DataParallel(kp3dgs_model).cuda()
+        model = torch.nn.DataParallel(model, device_ids=[0, 1]).cuda()    # 设置多 GPU
+        kp3dgs_model = torch.nn.DataParallel(kp3dgs_model, device_ids=[0, 1]).cuda()
     # load existing model
     if 'WEIGHTS' in cfg.CONST:
         print('Recovering from %s ...' % (cfg.CONST.WEIGHTS))
@@ -210,8 +211,8 @@ def train_net(cfg):
         model.load_state_dict(checkpoint['model'])
         print('Recover complete. Current epoch = #%d; best metrics = %s.' % (checkpoint['epoch_index'], checkpoint['best_metrics']))
 
-    kp_net_checkpoint = torch.load('../results_kp/train_kp_shapenet55_Log_2024_10_22_11_08_37/checkpoints/ckpt-best.pth')   # 128 kp 点的 checkpoints
-    kp_model.load_state_dict(kp_net_checkpoint['model'])    # ???
+    kp_net_checkpoint = torch.load('../results_kp3dgs/train_kp3dgs_shapenet55_Log_2024_12_06_01_53_06/checkpoints/ckpt-best.pth')   # 64 kp3dgs 点的 checkpoints
+    kp3dgs_model.load_state_dict(kp_net_checkpoint['model'])    # ???
     ##################
     # Training Manager
     ##################
@@ -219,7 +220,7 @@ def train_net(cfg):
     manager = Manager(model, cfg)
 
     # Start training
-    manager.train(model, kp_model, train_data_loader, val_data_loader, cfg)   # 输入：model, train data, val data, cfg
+    manager.train(model, kp3dgs_model, train_data_loader, val_data_loader, cfg)   # 输入：model, train data, val data, cfg
 
 
 def test_net(cfg):  # 测试
@@ -272,23 +273,24 @@ def test_net(cfg):  # 测试
     
 
     Model = import_module(args.net_model)  #
-    kp_Model = import_module(args.kp_net_model)
+    kp3dgs_Model = import_module(args.kp3dgs_net_model)
     
     model = Model.__dict__[args.arch_model](up_factors=cfg.NETWORK.UPSAMPLE_FACTORS)
-    kp_model = kp_Model.__dict__['kp_128']()
+    kp3dgs_model = kp3dgs_Model.__dict__['KP_3DGS_640']()
     
+   
     if torch.cuda.is_available():
-        model = torch.nn.DataParallel(model).cuda()
-        kp_model = torch.nn.DataParallel(kp_model).cuda()
+        model = torch.nn.DataParallel(model, device_ids=[0, 1]).cuda()
+        kp3dgs_model = torch.nn.DataParallel(kp3dgs_model, device_ids=[0, 1]).cuda()
 
     # load pretrained model
     # cfg.CONST.WEIGHTS = os.path.join(cfg.DIR.OUT_PATH, cfg.DIR.PRETRAIN, 'checkpoints', 'ckpt-best.pth')
     # print('Recovering from %s ...' % (cfg.CONST.WEIGHTS))
     
-    kp_net_checkpoint = torch.load('../results_kp/train_kp_shapenet55_Log_2024_10_22_11_08_37/checkpoints/ckpt-best.pth')# load checkpoint 128kp train from gt
-    kp_model.load_state_dict(kp_net_checkpoint['model'])
+    kp_net_checkpoint = torch.load('../results_kp3dgs/train_kp3dgs_shapenet55_Log_2024_12_06_01_53_06/checkpoints/ckpt-best.pth')# load checkpoint 128kp train from gt
+    kp3dgs_model.load_state_dict(kp_net_checkpoint['model'])
     
-    checkpoint = torch.load('../results/train_seed_kp_shapenet55_Log_2024_11_12_13_19_06/checkpoints/ckpt-best.pth')     # load checkpoint
+    checkpoint = torch.load('../results/train_seed_kp_shapenet55_Log_2024_12_09_09_22_56/checkpoints/ckpt-best.pth')     # load checkpoint
     model.load_state_dict(checkpoint['model'])
 
     ##################
@@ -298,7 +300,7 @@ def test_net(cfg):  # 测试
     manager = Manager(model, cfg)
 
     # Start training
-    manager.test(cfg, model, kp_model, val_data_loader, outdir=cfg.DIR.RESULTS if args.output else None, mode=args.mode)
+    manager.test(cfg, model, kp3dgs_model, val_data_loader, outdir=cfg.DIR.RESULTS if args.output else None, mode=args.mode)
         
 
 def set_seed(seed):

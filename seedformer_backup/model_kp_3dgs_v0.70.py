@@ -7,11 +7,11 @@ key points generate(3D GS)
 ==============================================================
 
 Author: Fan Quanjiang
-Date: 2024.12.4
-version: 0.72
-note: k = 200  sample_num = 30  新增采样后所有点云与 gt 的 cd 损失
+Date: 2024.11.19
+version: 0.70
+note: 分开预测均值、方差、四元数；先 freeze cov 层，训练 means 层，再 freeze means 层，训练cov层。解决 v0.61 无法先训 means 再一起训 
 
-next:  decoder时候降采样一次加一次全局特征, cat两次; 用 so3 预测旋转矩阵  ; 在3d高斯采样完加一个 PointNet_SA_Module_KNN
+next: 加一个loss, 所有点和gt的; decoder时候降采样一次加一次全局特征, cat两次; 用 so3 预测旋转矩阵
 ==============================================================
 '''
 import torch
@@ -44,8 +44,8 @@ def sample_with_clipping(means, cov_matrices, num_samples):
     mvn = MultivariateNormal(means, cov_matrices)
     samples = mvn.sample(torch.Size([num_samples]))   # (num_samples, B, N, 3)
     
-    lower_bound = means -  3 * stddev  # (B, N, 3)
-    upper_bound = means +  3 * stddev  # (B, N, 3)
+    lower_bound = means -  2 * stddev  # (B, N, 3)
+    upper_bound = means +  2 * stddev  # (B, N, 3)
     
     samples_clipped = samples.clone() 
     for i in range(3):  # 3是对应 x, y, z 轴
@@ -200,7 +200,6 @@ class KP_3DGS(nn.Module):
         self.get_cov1 = mlp(1024+512,512)
         self.get_cov2 = mlp(512,256)
         self.get_cov3 = mlp(256,self.point_number*7)
-        self.downsample = PointNet_SA_Module_KNN(128, 32, 3, [64, 128, 128, 3], group_all=False, if_bn=False, if_idx=True)
         # self.sample = Sample_with_clipping(num_samples = 30)
 
     def freeze_cov_layers(self):
@@ -294,14 +293,6 @@ class KP_3DGS(nn.Module):
         sample_num = 30
         sample_points = sample_with_clipping(means, cov_mat, sample_num)  # # (B, N, sample_num, 3)
         
-        # get 128 points to Seedfoemer
-        sample_points_re = (sample_points.reshape(B, -1, 3)).contiguous()  # (B,N*sample_num, 3)
-        
-        # sample_ds128 = fps_subsample(sample_points_re, 128)   # 用 fps 下采样  梯度爆炸可能由 PointNet_SA_Module_KNN 导致 （不是这个原因），去掉 sample_ds128 的loss试试
-        
-        # sample_ds128_xyz, sample_ds128_points, idx = self.downsample(sample_points_re, sample_points_re) # (B, 3, 128)
-        # sample_ds128 = sample_ds128_xyz
-        
 
         # test
         # sample_points_re = sample_points.reshape(B, -1, 3)  # (B, 640, 3)
@@ -318,7 +309,7 @@ class KP_3DGS(nn.Module):
         
     
 
-        return means, sample_points ,sample_points_re
+        return means, sample_points
         
 
 
@@ -336,49 +327,40 @@ class kp_3dgs_loss(nn.Module):
         super(kp_3dgs_loss,self).__init__()
         self.chamfer_dist = chamfer_3DDist()
         
-    def forward(self, means, sample_points, sample_points_re, gt):
+    def forward(self, means, sample_points, gt):
         """
         Args:
             means: (B, N, 3)
             sample_points: (B, N, sample_num, 3)
             gt: (B, 8192, 3)
         """
-        
-        
         B, N, sample_num, _ = sample_points.shape
         gt = gt.contiguous()
         CD = chamfer_sqrt
-        
-        
-        # 3dgs knn loss
         k = 200
         idx = query_knn(k,  gt, means, include_self = False)  # (B, N, k)
+        
         grouped_xyz = grouping_operation(gt.permute(0,2,1).contiguous(), idx)   # (B, 3, N, k)
         grouped_xyz = grouped_xyz.permute(0,2,3,1)  # (B, N, k, 3)
+        
         sample_points_list = sample_points.unbind(dim=1) # N * (B, sample_num, 3)
         gt_list = grouped_xyz.unbind(dim=1) # N * (B, k, 3)
+        
         cd2_list = [CD(sample_, gt_)
                      for sample_, gt_ in zip(sample_points_list, gt_list)]
-        sample_knn_loss = torch.sum(torch.stack(cd2_list))
+        
+
+        cd2 = torch.sum(torch.stack(cd2_list))
 
         
-        # means loss
+        
         B1,N1,_ = means.shape
-        gt1 = fps_subsample(gt,N1)
-        mean_loss = CD(means, gt1)   
+        # gt1 = fps_subsample(gt,N1)
+        cd1 = CD(means, gt)
         
-        
-        # sample ds128 loss
-        B2,N2,_ = sample_points_re.shape
-        gt2 = fps_subsample(gt,N2)
-        sample_points_loss = CD(sample_points_re, gt2)
-        
-        k1 = 0.3
-        k2 = 0.5
-        k3 = 0.2
-        # return sample_knn_loss*1e3 + mean_loss*1e3 + sample_ds128_loss*1e3, mean_loss*1e3 , sample_knn_loss*1e3 ,sample_ds128_loss*1e3
-        # return ( k1*sample_knn_loss/N + k2*mean_loss + k3*sample_ds128_loss)*1e3, mean_loss*1e3 , (sample_knn_loss/N)*1e3 ,sample_ds128_loss*1e3
-        return (k1*sample_knn_loss/N + k2*mean_loss + k3*sample_points_loss)*1e3, mean_loss*1e3 , (sample_knn_loss/N)*1e3 ,sample_points_loss*1e3
+
+        # return cd1*1e3 + cd2*1e3, cd1*1e3 , cd2*1e3
+        return cd2*1e3, cd1*1e3 , cd2*1e3
 
 
 class means_cd_loss(nn.Module):

@@ -7,13 +7,8 @@ SeedFormer: Point Cloud Completion
 ==============================================================
 
 Author:
-Date: 2024-12-11
-version: 0.6
-note: seedformer 输入加 64 个 3DGS 每个采样30个点   修改： FeatureExtractor
-next: 引入点云法向量特征
-      1. 输入点云直接估计法向量，得到 6 维特征 (x,y,z,nx,ny,nz) 再进入网路
-      2. (x,y,z) 提取完特征之后在后面 cat 上法向量特征       gaussian_sa_module_1 的输出 cat 上法向量
-      3. 加个法向量的损失函数
+Date: 2024-11-11
+version: 0.3
 ==============================================================
 '''
 
@@ -129,65 +124,54 @@ class FeatureExtractor(nn.Module):
         Encoder that encodes information of partial point cloud
         """
         super(FeatureExtractor, self).__init__()
+        self.sa_module_1 = PointNet_SA_Module_KNN(512, 16, 3, [64, 128], group_all=False, if_bn=False, if_idx=True)
+        self.sa_module_2 = PointNet_SA_Module_KNN(128, 16, 128, [128, 256], group_all=False, if_bn=False, if_idx=True)
+        self.sa_module_3 = PointNet_SA_Module_KNN(None, None, 256, [512, out_dim], group_all=True, if_bn=False)
+        self.sa_kp_1 = PointNet_SA_Module_KNN(128, 8, 3, [64, 128], group_all=False, if_bn=False, if_idx=True)
+        # self.sa_kp_2 = PointNet_SA_Module_KNN(128, 8, 128, [128, 256], group_all=False, if_bn=False, if_idx=True)
         
-        self.partial_sa_module_1 = PointNet_SA_Module_KNN(512, 16, 3, [64, 128], group_all=False, if_bn=False, if_idx=True)
-        self.partial_transformer_1 = vTransformer(128, dim=64, n_knn=n_knn)
-        self.partial_sa_module_2 = PointNet_SA_Module_KNN(128, 16, 128, [128, 256], group_all=False, if_bn=False, if_idx=True)
-        self.partial_transformer_2 = vTransformer(256, dim=64, n_knn=n_knn)
-        self.partial_groupall = PointNet_SA_Module_KNN(None, None, 256, [512, out_dim], group_all=True, if_bn=False)
+        
+        
+        self.transformer_1 = vTransformer(128, dim=64, n_knn=n_knn)
+        self.transformer_2 = vTransformer(256, dim=64, n_knn=n_knn)
+        self.kp_transformer_1 = vTransformer(128, dim=64, n_knn=8)
+        # self.kp_transformer_2 = vTransformer(256, dim=64, n_knn=n_knn)
+        
+        
 
-
-        # Gaussian sampled cloud feature extractor
-        self.gaussian_sa_module_1 = PointNet_SA_Module_KNN(512, 16, 3, [32, 64], group_all=False, if_bn=False, if_idx=True)
-        self.gaussian_transformer_1 = vTransformer(64, dim=64, n_knn=n_knn)
-        self.gaussian_sa_module_2 = PointNet_SA_Module_KNN(128, 16, 64, [64, 128], group_all=False, if_bn=False, if_idx=True)
-        self.gaussian_transformer_2 = vTransformer(128, dim=64, n_knn=n_knn)
-
-  
-
-    def forward(self, partial_cloud, gs_points):
+    def forward(self, partial_cloud, kp):
         """
         Args:
              partial_cloud: b, 3, 2048
-             gs_points: b,3,1920
+             kp: b,3,128
 
         Returns:
             l3_points: (B, out_dim, 1)
         """
-        # Process Gaussian sampled points
-        l0_xyz_gs = gs_points     # (B, 3, 1920)
-        l0_points_gs = gs_points  # (B, 3, 1920)
+        cat0_points = torch.cat((partial_cloud, kp), dim=2) # (B, 3, 2176)
+        l0_xyz = cat0_points  # (B, 3, 2176)
+        l0_points = cat0_points
+        kp0_xyz = kp
+        kp0_feat = kp
         
-        l1_xyz_gs, l1_points_gs, _ = self.gaussian_sa_module_1(l0_xyz_gs, l0_points_gs)  # (B, 3, 512)  (B, 64, 512)
-        l1_points_gs = self.gaussian_transformer_1(l1_points_gs, l1_xyz_gs)  # (B, 64, 512)
         
-        l2_xyz_gs, l2_points_gs, _ = self.gaussian_sa_module_2(l1_xyz_gs, l1_points_gs) # (B, 3, 128)   (B, 128, 128)
-        l2_points_gs = self.gaussian_transformer_2(l2_points_gs, l2_xyz_gs)   # (B, 128, 128)
+        l1_xyz, l1_points, idx1 = self.sa_module_1(l0_xyz, l0_points)  # (B, 3, 512), (B, 128, 512)  l1_xyz：512个点xyz坐标 l1_points：512个点，128维特征
+        l1_points = self.transformer_1(l1_points, l1_xyz)   # l1_points用transformer增强特征
+        
+        kp1_xyz, kp1_points, pk1_id = self.sa_kp_1(kp0_xyz, kp0_feat)  # (B, 3, 128)  (B, 128, 128)
+        kp1_points = self.kp_transformer_1(kp1_points, kp1_xyz)            # (B, 128, 128)
+        
+        
+        cat1_xyz = torch.cat((l1_xyz, kp1_xyz), dim=2) # (B, 3, 640)
+        cat1_point = torch.cat((l1_points, kp1_points), dim=2) # (B, 128, 640)
+        
+        mix_xyz, mix_points, idx2 = self.sa_module_2(cat1_xyz, cat1_point) # (B, 3, 128) (B, 256, 128)
+        mix_points = self.transformer_2(mix_points, mix_xyz)  # (B, 256, 128)
+        
+        l3_xyz, feat_all = self.sa_module_3(mix_xyz, mix_points)  # (B, 3, 1), (B, out_dim, 1)   128个点变成1个点，特征变成一个out_dim维的全局特征
         
 
-        
-        # fuse partial cloud and GS cloud
-        fusion1 = torch.cat((partial_cloud, l2_xyz_gs), dim=2)  # (B, 3, 2176)
-        l0_xyz_fusion1 = fusion1
-        l0_point_fusion1 = fusion1
-    
-        l1_xyz_fusion1, l1_points_fusion1, _ = self.partial_sa_module_1(l0_xyz_fusion1, l0_point_fusion1) # (B, 3, 512)   (B, 128, 512)
-        l1_points_fusion1 = self.partial_transformer_1(l1_points_fusion1, l1_xyz_fusion1)  # (B, 128, 512)
-        
-        
-        l0_xyz_fusion2 = torch.cat((l1_xyz_fusion1, l2_xyz_gs), dim=2) # (B, 3, 640)
-        l0_point_fusion2 = torch.cat((l1_points_fusion1, l2_points_gs), dim=2) # (B, 128, 640)
-        
-        l1_xyz_fusion2, l1_points_fusion2, _ = self.partial_sa_module_2(l0_xyz_fusion2, l0_point_fusion2)  # (B, 3, 128)   (B, 256, 128)
-        l1_points_fusion2 = self.partial_transformer_2(l1_points_fusion2, l1_xyz_fusion2) # (B, 256, 128)
-        
-        l2_xyz_fusion2, l2_points_fusion2 = self.partial_groupall(l1_xyz_fusion2, l1_points_fusion2) # global feature (B, 256, 1)
-
-        # print("l2_points_fusion2 shape:", l2_points_fusion2.shape)   # ([24, 256, 1])
-        # print("l1_xyz_fusion2 shape:", l1_xyz_fusion2.shape)   # ([24, 3, 128])
-        # print("l1_points_fusion2 shape:", l1_points_fusion2.shape)   # ([24, 256, 128])
-        # exit()
-        return l2_points_fusion2, l1_xyz_fusion2, l1_points_fusion2
+        return feat_all, mix_xyz, mix_points
 
 
 # 加 cross attention
@@ -614,14 +598,14 @@ class SeedFormer(nn.Module):
         self.feat_global = PointNet_SA_Module_KNN(None, None, 256, [512, 512], group_all=True, if_bn=False)
         self.feat_transformer = vTransformer(256, dim=64, n_knn=n_knn)
 
-    def forward(self, partial_cloud, gs_sample):
+    def forward(self, partial_cloud, kp):
         """
         Args:
             partial_cloud: (B, N, 3) batch 点数量 xyz坐标
-            3dgs_sample (B, 1920, 3) 64 个 3DGS 每个采样 30 点
+            kp (B, 128, 3) 64 个 kepoint xyz 坐标
         """
         # Encoder
-        feat, mixed_xyz, mixed_feat = self.forward_encoder(partial_cloud, gs_sample)
+        feat, mixed_xyz, mixed_feat = self.forward_encoder(partial_cloud, kp)
         # 输出：全局特征(B, 512, 1)  降采样点云坐标(B, 3, 128)  patch_xyz的局部特征(B, 256, 128) kp_feat
         
         
@@ -632,17 +616,13 @@ class SeedFormer(nn.Module):
 
         return pred_pcds
 
-    def forward_encoder(self, partial_cloud, gs_sample):  # 输入残缺点云
+    def forward_encoder(self, partial_cloud, kp):  # 输入残缺点云
         # feature extraction
         partial_cloud = partial_cloud.permute(0, 2, 1).contiguous() 
-        gs_sample = gs_sample.permute(0, 2, 1).contiguous() # (B, 3, 1920)
-        
-        # print(partial_cloud.shape)
-        # print(gs_sample.shape)
-        # exit()
+        kp = kp.permute(0, 2, 1).contiguous() # (B, 3, 128)
         
         # method 0
-        feat, mixed_xyz, mixed_feat = self.feat_extractor(partial_cloud, gs_sample) # (B, feat_dim, 1)
+        feat, mixed_xyz, mixed_feat = self.feat_extractor(partial_cloud, kp) # (B, feat_dim, 1)
         
         # method 1
         # patch_xyz, patch_feat, kp_xyz, kp_feat = self.feat_extractor(partial_cloud, kp) # feat: (B, 512, 1) patch_xyz: (B, 3, 128) patch_feat: (B, 256, 128)

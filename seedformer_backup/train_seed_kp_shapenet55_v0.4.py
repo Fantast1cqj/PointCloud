@@ -1,16 +1,15 @@
 '''
 ==============================================================
 
-SeedFormer: Point Cloud Completion
--> Training on PCN dataset
+SeedFormer + key poins 
+-> Training on ShapeNet-55/34
 
 ==============================================================
 
-Author: Haoran Zhou
-Date: 2022-5-31
-cmd: CUDA_VISIBLE_DEVICES=0,1,2,3 python3 train_seed_kp_pcn.py 
-     CUDA_VISIBLE_DEVICES=0,1,2,3 python3 train_seed_kp_pcn.py --test --pretrained train_seed_kp_pcn_Log_2024_11_20_13_26_11
-     
+Author:
+Date:
+cmd: CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 python3 train_seed_kp_shapenet55.py 
+     CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 python3 train_seed_kp_shapenet55.py --test --pretrained train_seed_kp_shapenet55_Log_2024_11_12_13_19_06
 ==============================================================
 '''
 
@@ -25,6 +24,7 @@ import utils.data_loaders
 from easydict import EasyDict as edict
 from importlib import import_module
 from pprint import pprint
+# from manager import Manager
 from manager_seed_kp import Manager
 
 
@@ -43,12 +43,13 @@ parser.add_argument('--kp_net_model', type=str, default='key_point_net', help='I
 parser.add_argument('--arch_model', type=str, default='seedformer_dim128', help='Model to use.')
 parser.add_argument('--test', dest='test', help='Test neural networks', action='store_true')
 parser.add_argument('--inference', dest='inference', help='Inference for benchmark', action='store_true')
-parser.add_argument('--output', type=int, default=False, help='Output testing results.')
+parser.add_argument('--output', type=int, default=False, help='Output testing results.')       # 是否输出点云
 parser.add_argument('--pretrained', type=str, default='', help='Pretrained path for testing.')
+parser.add_argument('--mode', type=str, default='easy', help='Testing mode [easy, median, hard].')  # 测试难度
 args = parser.parse_args()
 
 
-def PCNConfig():
+def ShapeNet55Config():
 
     #######################
     # Configuration for PCN
@@ -61,25 +62,18 @@ def PCNConfig():
     # Dataset Config
     #
     __C.DATASETS                                     = edict()
-    __C.DATASETS.COMPLETION3D                        = edict()
-    __C.DATASETS.COMPLETION3D.CATEGORY_FILE_PATH     = './datasets/Completion3D.json'
-    __C.DATASETS.COMPLETION3D.PARTIAL_POINTS_PATH    = '/path/to/datasets/Completion3D/%s/partial/%s/%s.h5'
-    __C.DATASETS.COMPLETION3D.COMPLETE_POINTS_PATH   = '/path/to/datasets/Completion3D/%s/gt/%s/%s.h5'
-    __C.DATASETS.SHAPENET                            = edict()
-    __C.DATASETS.SHAPENET.CATEGORY_FILE_PATH         = './datasets/ShapeNet.json'
-    __C.DATASETS.SHAPENET.N_RENDERINGS               = 8
-    __C.DATASETS.SHAPENET.N_POINTS                   = 2048
-    __C.DATASETS.SHAPENET.PARTIAL_POINTS_PATH        = '/home/ps/wcw_1999/datasets/PCN/%s/partial/%s/%s/%02d.pcd'
-    __C.DATASETS.SHAPENET.COMPLETE_POINTS_PATH       = '/home/ps/wcw_1999/datasets/PCN/%s/complete/%s/%s.pcd'
-    # __C.DATASETS.SHAPENET.PARTIAL_POINTS_PATH        = '/home/ps/wcw_1999/datasets/PCN/%s/complete/%s/%s.pcd'
-    # __C.DATASETS.SHAPENET.COMPLETE_POINTS_PATH       = '/home/ps/wcw_1999/datasets/PCN/%s/partial/%s/%s/%02d.pcd'
+    __C.DATASETS.SHAPENET55                          = edict()
+    __C.DATASETS.SHAPENET55.CATEGORY_FILE_PATH       = './datasets/ShapeNet55-34/ShapeNet-55/'
+    __C.DATASETS.SHAPENET55.N_POINTS                 = 2048
+    __C.DATASETS.SHAPENET55.COMPLETE_POINTS_PATH     = '/home/ps/wcw_1999/datasets/ShapeNet55/shapenet_pc/%s'
+
     #
     # Dataset
     #
     __C.DATASET                                      = edict()
     # Dataset Options: Completion3D, ShapeNet, ShapeNetCars, Completion3DPCCT
-    __C.DATASET.TRAIN_DATASET                        = 'ShapeNet'
-    __C.DATASET.TEST_DATASET                         = 'ShapeNet'
+    __C.DATASET.TRAIN_DATASET                        = 'ShapeNet55'
+    __C.DATASET.TEST_DATASET                         = 'ShapeNet55'
 
     #
     # Constants
@@ -96,31 +90,28 @@ def PCNConfig():
     __C.DIR                                          = edict()
     __C.DIR.OUT_PATH                                 = '../results'
     __C.DIR.TEST_PATH                                = '../test'
-    __C.CONST.DEVICE                                 = '1, 2, 3'
+    # __C.CONST.DEVICE                                 = '0, 1'
+    __C.CONST.DEVICE                                 = '0, 1, 2, 3'
     # __C.CONST.WEIGHTS                                = None # 'ckpt-best.pth'  # specify a path to run test and inference
 
     #
     # Network
     #
     __C.NETWORK                                      = edict()
-    __C.NETWORK.UPSAMPLE_FACTORS                     = [1, 4, 8] # 16384
+    __C.NETWORK.UPSAMPLE_FACTORS                     = [1, 4, 4]
 
     #
     # Train
     #
     __C.TRAIN                                        = edict()
-    __C.TRAIN.BATCH_SIZE                             = 45
+    __C.TRAIN.BATCH_SIZE                             = 150     # 48
     __C.TRAIN.N_EPOCHS                               = 400
-    __C.TRAIN.SAVE_FREQ                              = 25
     __C.TRAIN.LEARNING_RATE                          = 0.001
-    __C.TRAIN.LR_MILESTONES                          = [50, 100, 150, 200, 250]
-    __C.TRAIN.LR_DECAY_STEP                          = 50
-    __C.TRAIN.WARMUP_STEPS                           = 200
+    __C.TRAIN.LR_DECAY                               = 100
     __C.TRAIN.WARMUP_EPOCHS                          = 20
     __C.TRAIN.GAMMA                                  = .5
     __C.TRAIN.BETAS                                  = (.9, .999)
     __C.TRAIN.WEIGHT_DECAY                           = 0
-    __C.TRAIN.LR_DECAY                               = 150
 
     #
     # Test
@@ -147,17 +138,29 @@ def train_net(cfg):
     ########################
 
     train_dataset_loader = utils.data_loaders.DATASET_LOADER_MAPPING[cfg.DATASET.TRAIN_DATASET](cfg)
-    val_dataset_loader = utils.data_loaders.DATASET_LOADER_MAPPING[cfg.DATASET.TEST_DATASET](cfg)
+    val_dataset_loader = utils.data_loaders.DATASET_LOADER_MAPPING[cfg.DATASET.TEST_DATASET](cfg)  # cfg.DATASET.TEST_DATASET =  'ShapeNet55'
 
+    # # test
+    # train_data_set = train_dataset_loader.get_dataset(utils.data_loaders.DatasetSubset.TRAIN)
+    # taxonomy_id, model_id, data = train_data_set[0]
+    # print(len(train_data_set))             # 41952
+    # print(f"taxonomy_id: {taxonomy_id}")   # taxonomy_id: 02828884       train.txt 中第一个
+    # print(f"model_id: {model_id}")         # model_id: 3d2ee152db78b312e5a8eba5f6050bab
+    # print(data)
+    # for key, value in data.items():
+    #     print(f"Shape of {key}: {value.shape}") # Shape of gtcloud: torch.Size([8192, 3])
+    # quit()
+    
+    
     train_data_loader = torch.utils.data.DataLoader(dataset=train_dataset_loader.get_dataset(
-        utils.data_loaders.DatasetSubset.TRAIN),
-                                                    batch_size=cfg.TRAIN.BATCH_SIZE,
-                                                    num_workers=cfg.CONST.NUM_WORKERS,
-                                                    collate_fn=utils.data_loaders.collate_fn,
-                                                    pin_memory=True,
-                                                    shuffle=True,
-                                                    drop_last=False)
-    val_data_loader = torch.utils.data.DataLoader(dataset=val_dataset_loader.get_dataset(
+        utils.data_loaders.DatasetSubset.TRAIN),  # datast 中有 41952 个元素，每个元素中：taxonomy_id, model_id, data，data 中 key: gtcloud value: [8192, 3]
+                                                    batch_size=cfg.TRAIN.BATCH_SIZE,   # 指定每个 batch 中的样本数量 cfg: 48
+                                                    num_workers=cfg.CONST.NUM_WORKERS, # load data 的进程数量 cfg: 8
+                                                    collate_fn=utils.data_loaders.collate_fn, # 定义了如何将多个数据样本组合成一个批次
+                                                    pin_memory=True,  # 性能优化
+                                                    shuffle=True,     # 每个 epoch 开始时对数据进行打乱
+                                                    drop_last=False)  # 最后一个批次不完整，也会被包含在训练中
+    val_data_loader = torch.utils.data.DataLoader(dataset=val_dataset_loader.get_dataset(     # 验证集，用的 test dataset
         utils.data_loaders.DatasetSubset.TEST),
                                                   batch_size=cfg.TRAIN.BATCH_SIZE,
                                                   num_workers=cfg.CONST.NUM_WORKERS//2,
@@ -187,17 +190,19 @@ def train_net(cfg):
     # Prepare Network Model
     #######################
 
-    Model = import_module(args.net_model)
+    Model = import_module(args.net_model)  # 在当前目录下找 model_addkp.py
     kp_Model = import_module(args.kp_net_model) # 在当前目录下找 key_point_net.py
-    
-    model = Model.__dict__[args.arch_model](up_factors=cfg.NETWORK.UPSAMPLE_FACTORS)
+    # print(Model)    # <module 'model_addkp' from '/home/ps/wcw_1999/codes/seedformer-master/codes/model_addkp.py'>
+    # print(kp_Model) # <module 'key_point_net' from '/home/ps/wcw_1999/codes/seedformer-master/codes/key_point_net.py'>
+    # quit()
+    model = Model.__dict__[args.arch_model](up_factors=cfg.NETWORK.UPSAMPLE_FACTORS)   # args.arch_model = seedformer_dim128 seedformer_dim128 在 model_addkp.py 中
     kp_model = kp_Model.__dict__['kp_128']()
-    # print(model)
+    
     if torch.cuda.is_available():
-        model = torch.nn.DataParallel(model, device_ids=[0,1,2]).cuda()  # 设置多 GPU
-        # model = torch.nn.DataParallel(model).cuda()
-        # kp_model = torch.nn.DataParallel(kp_model).cuda()
-        kp_model = torch.nn.DataParallel(kp_model, device_ids=[0,1,2]).cuda()
+        model = torch.nn.DataParallel(model).cuda()
+        kp_model = torch.nn.DataParallel(kp_model).cuda()
+        # model = torch.nn.DataParallel(model, device_ids=[0, 1, 2])   # 设置多 GPU？
+
     # load existing model
     if 'WEIGHTS' in cfg.CONST:
         print('Recovering from %s ...' % (cfg.CONST.WEIGHTS))
@@ -214,10 +219,10 @@ def train_net(cfg):
     manager = Manager(model, cfg)
 
     # Start training
-    manager.train(model, kp_model, train_data_loader, val_data_loader, cfg)
+    manager.train(model, kp_model, train_data_loader, val_data_loader, cfg)   # 输入：model, train data, val data, cfg
 
 
-def test_net(cfg):
+def test_net(cfg):  # 测试
     # Enable the inbuilt cudnn auto-tuner to find the best algorithm to use
     torch.backends.cudnn.benchmark = True
 
@@ -225,19 +230,21 @@ def test_net(cfg):
     # Load Train/Val Dataset
     ########################
 
-    test_dataset_loader = utils.data_loaders.DATASET_LOADER_MAPPING[cfg.DATASET.TEST_DATASET](cfg)
+    test_dataset_loader = utils.data_loaders.DATASET_LOADER_MAPPING[cfg.DATASET.TEST_DATASET](cfg)   # cfg.DATASET.TEST_DATASET = 'ShapeNet55'
 
     val_data_loader = torch.utils.data.DataLoader(dataset=test_dataset_loader.get_dataset(
         utils.data_loaders.DatasetSubset.TEST),
-                                                  batch_size=1,
+                                                  batch_size=1,    # 每个数据批次的大小为1
                                                   num_workers=cfg.CONST.NUM_WORKERS,
                                                   collate_fn=utils.data_loaders.collate_fn,
                                                   pin_memory=True,
                                                   shuffle=False)
 
+
     # Path for pretrained model
     if args.pretrained == '':
         list_trains = os.listdir(cfg.DIR.OUT_PATH)
+        # print(list_trains)   ['train_shapenet55_Log_2024_09_07_01_16_07']  
         list_pretrained = [train_name for train_name in list_trains if train_name.startswith(TRAIN_NAME+'_Log')]
         if len(list_pretrained) != 1:
             raise ValueError('Find {:d} models. Please specify a path for testing.'.format(len(list_pretrained)))
@@ -248,7 +255,10 @@ def test_net(cfg):
 
 
     # Set up folders for logs and checkpoints
-    cfg.DIR.TEST_PATH = os.path.join(cfg.DIR.TEST_PATH, cfg.DIR.PRETRAIN)
+    testset_name = cfg.DATASETS.SHAPENET55.CATEGORY_FILE_PATH    # 测试集文件名列表 test.txt
+    testset_name = os.path.basename(testset_name.strip('/'))
+    cfg.DIR.TEST_PATH = os.path.join(cfg.DIR.TEST_PATH, cfg.DIR.PRETRAIN, testset_name, args.mode)
+    # print(cfg.DIR.TEST_PATH)    ../test/train_shapenet55_Log_2024_09_07_01_16_07/ShapeNet-55/median
     cfg.DIR.RESULTS = os.path.join(cfg.DIR.TEST_PATH, 'outputs')
     cfg.DIR.LOGS = cfg.DIR.TEST_PATH
     print('Saving outdir: {}'.format(cfg.DIR.TEST_PATH))
@@ -259,27 +269,26 @@ def test_net(cfg):
     #######################
     # Prepare Network Model
     #######################
-
-    Model = import_module(args.net_model)
-    kp_Model = import_module(args.kp_net_model)
     
+
+    Model = import_module(args.net_model)  #
+    kp_Model = import_module(args.kp_net_model)
     
     model = Model.__dict__[args.arch_model](up_factors=cfg.NETWORK.UPSAMPLE_FACTORS)
     kp_model = kp_Model.__dict__['kp_128']()
-    
-    
     
     if torch.cuda.is_available():
         model = torch.nn.DataParallel(model).cuda()
         kp_model = torch.nn.DataParallel(kp_model).cuda()
 
-    kp_net_checkpoint = torch.load('../results_kp/train_kp_shapenet55_Log_2024_10_22_11_08_37/checkpoints/ckpt-best.pth')  # load checkpoint 128kp train from gt
+    # load pretrained model
+    # cfg.CONST.WEIGHTS = os.path.join(cfg.DIR.OUT_PATH, cfg.DIR.PRETRAIN, 'checkpoints', 'ckpt-best.pth')
+    # print('Recovering from %s ...' % (cfg.CONST.WEIGHTS))
+    
+    kp_net_checkpoint = torch.load('../results_kp/train_kp_shapenet55_Log_2024_10_22_11_08_37/checkpoints/ckpt-best.pth')# load checkpoint 128kp train from gt
     kp_model.load_state_dict(kp_net_checkpoint['model'])
     
-    # load pretrained model
-    # cfg.CONST.WEIGHTS = os.path.join(cfg.DI.ROUT_PATH, cfg.DIR.PRETRAIN, 'checkpoints', 'ckpt-best.pth')
-    # print('Recovering from %s ...' % (cfg.CONST.WEIGHTS))
-    checkpoint = torch.load('../results/train_seed_kp_pcn_Log_2024_11_22_08_45_38/checkpoints/ckpt-best.pth')     # load checkpoint
+    checkpoint = torch.load('../results/train_seed_kp_shapenet55_Log_2024_11_12_13_19_06/checkpoints/ckpt-best.pth')     # load checkpoint
     model.load_state_dict(checkpoint['model'])
 
     ##################
@@ -289,7 +298,7 @@ def test_net(cfg):
     manager = Manager(model, cfg)
 
     # Start training
-    manager.test(cfg, model, kp_model, val_data_loader, outdir=cfg.DIR.RESULTS if args.output else None)
+    manager.test(cfg, model, kp_model, val_data_loader, outdir=cfg.DIR.RESULTS if args.output else None, mode=args.mode)
         
 
 def set_seed(seed):
@@ -307,7 +316,7 @@ if __name__ == '__main__':
     print('cuda available ', torch.cuda.is_available())
 
     # Init config
-    cfg = PCNConfig()
+    cfg = ShapeNet55Config()
 
     # setting
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"

@@ -7,11 +7,16 @@ Train ket points net
 ==============================================================
 
 Author:
+version: v 0.80
 Date:
-version:
+cmd: CUDA_VISIBLE_DEVICES=6,7 python3 train_kp3dgs_shapenet55.py
+     CUDA_VISIBLE_DEVICES=4,5,6,7 python3 train_kp3dgs_shapenet55.py
+
+2 gpus:  __C.CONST.DEVICE   = '6,7'
+         model = torch.nn.DataParallel(model, device_ids=[0,1]).cuda()
 ==============================================================
 '''
-from key_point_net import KPN,ppro_cd_loss
+from model_kp_3dgs import KP_3DGS,kp_3dgs_loss,means_cd_loss,means_KL_loss
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -91,10 +96,10 @@ def ShapeNet55Config():
     #
 
     __C.DIR                                          = edict()
-    __C.DIR.OUT_PATH                                 = '/home/ps/wcw_1999/codes/seedformer-master/results_kp'
-    __C.DIR.TEST_PATH                                = '/home/ps/wcw_1999/codes/seedformer-master/test_kp'
-    __C.CONST.DEVICE                                 = '0, 1'
-    # __C.CONST.DEVICE                                 = '0, 1, 2, 3, 4, 5, 6, 7'
+    __C.DIR.OUT_PATH                                 = '/home/ps/wcw_1999/codes/seedformer-master/results_kp3dgs'
+    __C.DIR.TEST_PATH                                = '/home/ps/wcw_1999/codes/seedformer-master/test_kp3dgs'
+    # __C.CONST.DEVICE                                 = '0, 1'
+    __C.CONST.DEVICE                                 = ' 6,7'   # cmd: CUDA_VISIBLE_DEVICES=6,7 python3 train_kp3dgs_shapenet55.py 
     # __C.CONST.WEIGHTS                                = None # 'ckpt-best.pth'  # specify a path to run test and inference
 
     #
@@ -107,11 +112,11 @@ def ShapeNet55Config():
     # Train
     #
     __C.TRAIN                                        = edict()
-    __C.TRAIN.BATCH_SIZE                             = 48
+    __C.TRAIN.BATCH_SIZE                             = 150 # 320~480
     __C.TRAIN.N_EPOCHS                               = 400
-    __C.TRAIN.LEARNING_RATE                          = 0.001
+    __C.TRAIN.LEARNING_RATE                          = 0.003
     __C.TRAIN.LR_DECAY                               = 100
-    __C.TRAIN.WARMUP_EPOCHS                          = 20
+    __C.TRAIN.WARMUP_EPOCHS                          = 40
     __C.TRAIN.GAMMA                                  = .5
     __C.TRAIN.BETAS                                  = (.9, .999)
     __C.TRAIN.WEIGHT_DECAY                           = 0
@@ -156,8 +161,13 @@ class Manager_kp:
 
         # lr scheduler
         self.scheduler_steplr = StepLR(self.optimizer, step_size=1, gamma=0.1 ** (1 / cfg.TRAIN.LR_DECAY))
-        self.lr_scheduler = GradualWarmupScheduler(self.optimizer, multiplier=1, total_epoch=cfg.TRAIN.WARMUP_EPOCHS,
-                                              after_scheduler=self.scheduler_steplr)
+        self.lr_scheduler = GradualWarmupScheduler(self.optimizer, multiplier=1, total_epoch=cfg.TRAIN.WARMUP_EPOCHS,     
+                                              after_scheduler=self.scheduler_steplr)    # 前40轮学习率增长
+        
+        
+
+        
+        
 
         # record file
         self.train_record_file = open(os.path.join(cfg.DIR.LOGS, 'training.txt'), 'w')
@@ -208,7 +218,7 @@ class Manager_kp:
         self.train_record('n_itr, total_loss')
         print('Testing Record:')
         self.test_record('#epoch cdc cd1 cd2 partial_matching | cd3 | #best_epoch best_metrics')
-
+        torch.autograd.set_detect_anomaly(True)
         # Training Start
         for epoch_idx in range(init_epoch + 1, cfg.TRAIN.N_EPOCHS + 1):
 
@@ -220,10 +230,18 @@ class Manager_kp:
             model.train()
 
             # Update learning rate
+
             self.lr_scheduler.step()
+            
+            
+            
 
             # total cds
             total_t = 0
+            
+            ii = 0
+            kk = 0
+            base_path = '../test_kp/test_kp3dgs_cloud'
 
             batch_end_time = time.time()
             n_batches = len(train_data_loader)
@@ -233,14 +251,47 @@ class Manager_kp:
                     data[k] = utils.helpers.var_or_cuda(v)
 
                 # unpack data
-                partial, gt = self.unpack_data(data)    # 获取 partial 点云
+                partial, gt = self.unpack_data(data)    # 获取 partial 点云    partial shape: torch.Size([B, 2048, 3])  gt shape:  torch.Size([224, 8192, 3])
+                partial = partial.permute(0,2,1) # (B, 3, 2048)
                 
-                gt_downsample = fps_subsample(gt,1024).permute(0,2,1)
-                kp,pp = model(gt_downsample)
+                
+                gt_downsample = fps_subsample(gt,1024).permute(0,2,1)  # (B, 3, 1024)
+                means, cov_mat, sample_points = model(partial)
                 # print("kp size: ", kp.shape)    # kp size: torch.Size([120, 24, 3])
                 # exit()
+                
+                
+                # if epoch_idx == 5:
+                # kp_cut = np.squeeze(kp_3dgs)   # 去掉一个维度
+                # tensor_cpu = kp_cut.cpu()      # 转换为 cpu 张量
+                # kp_cpu = tensor_cpu.detach().numpy()    # 张量转 numpy
+                # file_name = f'partial_{ii}.npy'
+                # ii = ii + 1
+                # file_path = os.path.join(base_path, file_name)
+                # np.save(file_path, kp_cpu)     # 保存所有
+                
+                
+                # gt_cut = np.squeeze(gt_downsample.permute(0,2,1))   # 去掉一个维度
+                # gt_cut_cpu = gt_cut.cpu()      # 转换为 cpu 张量
+                # gt_cpu = gt_cut_cpu.detach().numpy()    # 张量转 numpy
+                # file_name2 = f'gt_{kk}.npy'
+                # kk = kk + 1
+                # file_path2 = os.path.join(base_path, file_name2)
+                # np.save(file_path2, gt_cpu)     # 保存所有
+                
+                # if ii == 100:
+                #     exit()
+                
+                
+                
+                # if epoch_idx < 30:
+                #     loss_total = means_cd_loss()(means, gt)
+                # else:
+                #     loss_total, mean_loss, kp_loss  = kp_3dgs_loss()(means, sample_points, gt)
 
-                loss_total = ppro_cd_loss()(kp,gt_downsample.permute(0,2,1))
+                
+                loss_total, KL_loss, mean_loss  = means_KL_loss(means, cov_mat, gt)
+
                 
 
                 self.optimizer.zero_grad()
@@ -252,8 +303,17 @@ class Manager_kp:
                 n_itr = (epoch_idx - 1) * n_batches + batch_idx
 
                 # training record
-                message = '{:d} {:.4f}'.format(n_itr, loss_total.item())
+                # if epoch_idx < 30:
+                #     message = '{:d} loss_total: {:.4f} '.format(n_itr, loss_total.item())
+                #     self.train_record(message, show_info=True)
+                # else:
+                #     message = '{:d} loss_total:  {:.4f} mean_loss: {:.4f} kp_loss: {:.4f} '.format(n_itr, loss_total.item(), mean_loss.item(), kp_loss.item(), )
+                #     self.train_record(message, show_info=True)
+                
+                message = '{:d} loss_total: {:.4f} KL_loss: {:.4f} mean_loss: {:.4f}'.format(n_itr, loss_total.item(), KL_loss.item(), mean_loss.item())
                 self.train_record(message, show_info=True)
+                
+                
 
             # avg cds
             avg_loss = total_t / n_batches
@@ -353,10 +413,10 @@ def train_kp(cfg):
     # Prepare Network Model
     #######################
 
-    model = KPN(128)
+    model = KP_3DGS(k = 64)
     if torch.cuda.is_available():
-        model = torch.nn.DataParallel(model).cuda()
-        # model = torch.nn.DataParallel(model, device_ids=[0, 1, 2])   # 设置多 GPU？
+        # model = torch.nn.DataParallel(model).cuda()
+        model = torch.nn.DataParallel(model, device_ids=[0,1]).cuda()  # 设置多 GPU？
     
     ####################### training
     manager = Manager_kp(model, cfg)
@@ -449,6 +509,8 @@ if __name__ == '__main__':
 
     # setting
     os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    
+    # os.environ["CUDA_VISIBLE_DEVICES"] = "6,7"
     os.environ["CUDA_VISIBLE_DEVICES"] = cfg.CONST.DEVICE
     
     train_kp(cfg)

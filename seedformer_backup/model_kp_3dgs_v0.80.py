@@ -7,9 +7,11 @@ key points generate(3D GS)
 ==============================================================
 
 Author: Fan Quanjiang
-Date: 2024.11.15
-version: 0.7
-note: 协方差矩阵预测方式 四元数   分开预测均值、方差和四元数   下一步改进: 加一个loss, 所有点和gt的; decoder时候降采样一次加一次全局特征, cat两次; 用 so3 预测旋转矩阵
+Date: 2024.12.3
+version: 0.80
+note: 分开预测均值、方差、四元数 同时训练均值和协方差矩阵    修改 loss
+
+next: 加一个loss, 所有点和gt的; decoder时候降采样一次加一次全局特征, cat两次; 用 so3 预测旋转矩阵  ; 在3d高斯采样完加一个 PointNet_SA_Module_KNN
 ==============================================================
 '''
 import torch
@@ -184,8 +186,8 @@ class KP_3DGS(nn.Module):
         super(KP_3DGS,self).__init__()
         self.point_number = k # 64
         
-        self.encoder = Encoder()
-        
+        self.encoder_means = Encoder()
+        self.encoder_covs = Encoder()
         # self.layer1 = conv1d(3,16)
         # self.layer2 = conv1d(16,64)
         # self.layer3 = conv1d(64,256)
@@ -200,42 +202,78 @@ class KP_3DGS(nn.Module):
         self.get_cov3 = mlp(256,self.point_number*7)
         # self.sample = Sample_with_clipping(num_samples = 30)
 
-        # self.pp_point3 = mlp(256,self.point_number)
-        
+    def freeze_cov_layers(self):
+        """Freeze the cov-related layers."""
+        for param in self.encoder_covs.parameters():
+            param.requires_grad = False
+        for param in self.get_cov1.parameters():
+            param.requires_grad = False
+        for param in self.get_cov2.parameters():
+            param.requires_grad = False
+        for param in self.get_cov3.parameters():
+            param.requires_grad = False
     
+    def unfreeze_cov_layers(self):
+        """Unfreeze the cov-related layers."""
+        for param in self.encoder_covs.parameters():
+            param.requires_grad = True
+        for param in self.get_cov1.parameters():
+            param.requires_grad = True
+        for param in self.get_cov2.parameters():
+            param.requires_grad = True
+        for param in self.get_cov3.parameters():
+            param.requires_grad = True
+    
+    def freeze_means_layers(self):
+        """Freeze the cov-related layers."""
+        for param in self.encoder_means.parameters():
+            param.requires_grad = False
+        for param in self.get_means1.parameters():
+            param.requires_grad = False
+        for param in self.get_means2.parameters():
+            param.requires_grad = False
+        for param in self.get_means3.parameters():
+            param.requires_grad = False
+    
+    
+
     def forward(self,partial):
         """
         Args:
             partial: (B, 3, N)
         """
         # encoder
-        partial_, partial_feat = self.encoder(partial)
-        partial_feat = partial_feat.permute(0,2,1) # (B, 512, 1024+512)
-        
-        means_feat = self.get_means1(partial_feat) # (B, N, 512)
-        means_feat = F.dropout(means_feat,p = 0.05)
+        partial_means, partial_feat_means = self.encoder_means(partial)
+        partial_covs, partial_feat_covs = self.encoder_covs(partial)  # (B, 1024+512, 512)
+        # decoder
+        partial_feat_means = partial_feat_means.permute(0,2,1) # (B, 512, 1024+512)
+        means_feat = self.get_means1(partial_feat_means) # (B, N, 512)
+        means_feat = F.dropout(means_feat,p = 0.2)
         means_feat = self.get_means2(means_feat)  # (B, N, 256)
-        means_feat = F.dropout(means_feat,p = 0.02)
-        means_feat = self.get_means3(means_feat)  # (B, N, 64*3)   mean_x mean_y mean_z
-        means_feat = torch.mean(means_feat,dim = 1)  # (B, 64*3)
-        means = means_feat.reshape((-1, self.point_number, 3)) # (B, 64, 3)   mean_x mean_y mean_z
+        means_feat = F.dropout(means_feat,p = 0.3)
+        means = self.get_means3(means_feat)  # (B, N, 64*3)   mean_x mean_y mean_z σ1 σ2 σ3 q0 q1 q2 q3 q4
+        means = torch.mean(means,dim = 1)  # (B, 64*3)
+        means = means.reshape((-1, self.point_number, 3)) # (B, 64, 3)   mean_x mean_y mean_z σ1 σ2 σ3 q0 q1 q2 q3 q4
         
-        cov_feat = self.get_cov1(partial_feat) # (B, N, 512)
+        
+        partial_feat_covs = partial_feat_covs.permute(0,2,1) # (B, 512, 1024+512)
+        cov_feat = self.get_cov1(partial_feat_covs) # (B, N, 512)
         cov_feat = F.dropout(cov_feat,p = 0.05)
         cov_feat = self.get_cov2(cov_feat)  # (B, N, 256)
         cov_feat = F.dropout(cov_feat,p = 0.02)
-        cov_feat = self.get_cov3(cov_feat)  # (B, N, 64*7)   mean_x mean_y mean_z
+        cov_feat = self.get_cov3(cov_feat)  # (B, N, 64*7)   σ1 σ2 σ3 q0 q1 q2 q3 q4
         cov_feat = torch.mean(cov_feat,dim = 1)  # (B, 64*7)
-        var_q = cov_feat.reshape((-1, self.point_number, 7)) # (B, 64, 7)   mean_x mean_y mean_z
+        var_q = cov_feat.reshape((-1, self.point_number, 7)) # (B, 64, 7)   σ1 σ2 σ3 q0 q1 q2 q3 q4
         
-        
-        
+        # get cov_mat
         B, N, _ = means.shape
-        # means = kp_gs[..., :3]  # (B, 64, 3) mean_x mean_y mean_z
-        var_element = var_q[:, :, :3]   # (B, 64, 3) σ1 σ2 σ3
+        
+        var_element = var_q[:, :, :3] # (B, 64, 3) σ1 σ2 σ3
         epsilon = 1e-5
         var_element = torch.abs(var_element) + epsilon
+        
         q = var_q[:, :, 3:]  # (B, 64, 4)  q0 q1 q2 q3 q4
+        
         q_norm = normalize_quaternions(q) # (B, 64, 4)
         R = quaternion_2_rotation_matrix(q_norm)  # (B, N, 3, 3)
         
@@ -245,12 +283,13 @@ class KP_3DGS(nn.Module):
         #         # 取方差向量并将其填充到对角线上
         #         diag = torch.diag(var_element[b, n])
         #         var_mat[b, n] = diag
+        
         var_mat = torch.diag_embed(var_element)
         
-        var_mat_squared = torch.matmul(var_mat, var_mat)  # 方差矩阵平方
-        cov_mat = torch.matmul(R, torch.matmul(var_mat_squared, R.transpose(-2, -1)))  # (B, N, 3, 3)
+        # var_mat_squared = torch.matmul(var_mat, var_mat)  # 方差矩阵平方
+        cov_mat = torch.matmul(R, torch.matmul(var_mat, R.transpose(-2, -1)))  # (B, N, 3, 3)
         
-        
+        # sample
         sample_num = 30
         sample_points = sample_with_clipping(means, cov_mat, sample_num)  # # (B, N, sample_num, 3)
         
@@ -270,7 +309,7 @@ class KP_3DGS(nn.Module):
         
     
 
-        return means, sample_points
+        return means, cov_mat, sample_points
         
 
 
@@ -282,6 +321,122 @@ def chamfer_sqrt(p1, p2):
     d1 = torch.mean(torch.sqrt(d1))
     d2 = torch.mean(torch.sqrt(d2))
     return (d1 + d2) / 2
+
+def fit_gaussian_distributions(points):
+    """
+    Args:
+        points: Tensor, shape (B, N, k, 3), where:
+            B: Batch size
+            N: Number of Gaussian distributions (points to fit)
+            k: Number of points per Gaussian distribution
+            3: xyz coordinates
+
+    Returns:
+        means: Tensor, shape (B, N, 3), means of the N Gaussian distributions
+        covariances: Tensor, shape (B, N, 3, 3), covariance matrices of the N Gaussian distributions
+    """
+    # Compute means along the k dimension
+    means = points.mean(dim=2)  # Shape: (B, N, 3)
+
+    # Compute covariance matrices
+    # Center the points
+    centered_points = points - means.unsqueeze(2)  # Shape: (B, N, k, 3)
+
+    # Compute covariances
+    # Use batched matrix multiplication to compute (k, 3)^T @ (k, 3) for each distribution
+    covariances = torch.matmul(
+        centered_points.transpose(-1, -2),  # Transpose the last two dimensions: (B, N, 3, k)
+        centered_points,                   # Shape: (B, N, k, 3)
+    ) / (points.size(2) - 1)  # Normalize by (k - 1) for unbiased estimate
+
+    return means, covariances
+
+
+def kl_divergence(mu1, sigma1, mu2, sigma2):
+    """
+    Args:
+        mu1, mu2: Tensor, shape (B, N, 3), mean vectors of two Gaussian distributions
+        sigma1, sigma2: Tensor, shape (B, N, 3, 3), covariance matrices of two Gaussian distributions
+
+    Returns:
+        kl_loss: Tensor, shape (B, N), KL divergence for each Gaussian pair
+    """
+    # 解决半正定矩阵可能为奇异矩阵
+    epsilon=1e-2
+    sigma2 = sigma2 + epsilon * torch.eye(sigma2.size(-1), device=sigma2.device)
+    sigma1 = sigma1 + epsilon * torch.eye(sigma1.size(-1), device=sigma1.device)
+    
+    d = mu1.size(-1)  # Dimensionality (3)
+
+    # Compute Sigma2 inverse
+    # cholesky 分解求逆
+    L1 = torch.linalg.cholesky(sigma2)
+    L1_inv = torch.linalg.inv(L1)
+    sigma2_inv = L1_inv.mT @ L1_inv
+    # # 直接求逆
+    # sigma2_inv = torch.linalg.inv(sigma2)
+
+    # Term 1: Trace(Sigma2^-1 * Sigma1)
+    trace_term = torch.einsum('bnik,bnkj->bni', sigma2_inv, sigma1).sum(dim=-1)
+
+    # Term 2: (mu2 - mu1)^T * Sigma2^-1 * (mu2 - mu1)
+    delta_mu = mu2 - mu1
+    mahalanobis_term = torch.einsum(
+        'bni,bnij,bnj->bn', delta_mu, sigma2_inv, delta_mu
+    )
+
+    # Term 3: log(det(Sigma2) / det(Sigma1))
+    det_ratio_term = torch.logdet(sigma2) - torch.logdet(sigma1)
+    det_ratio_term = torch.clamp(det_ratio_term, min=1e-5)  # 限制最小值，避免溢出？？？
+
+    # Combine terms
+    kl_loss = 0.5 * (trace_term + mahalanobis_term - d + det_ratio_term)
+    # if torch.sum(kl_loss) < 0:
+    #     det_2 = torch.linalg.det(sigma2)
+    #     print("det_2: ")
+    #     print(det_2)
+    
+    #     det_1 = torch.linalg.det(sigma1)
+    #     print("det_1: ")
+    #     print(det_1)
+        
+        
+        
+    #     # print("det_ratio_term")
+    #     # print(det_ratio_term)
+    #     # print("torch.logdet(sigma2): ")
+    #     # print(torch.logdet(sigma2))
+    #     # print("torch.logdet(sigma1): ")
+    #     # print(torch.logdet(sigma1))
+    #     exit()
+
+    return kl_loss
+
+
+def means_KL_loss(means, cov_mat, gt):
+    """
+    loss: CD(means,gt) + KL
+        Args:
+            means: (B, N, 3)
+            cov_mat: (B, N, 3, 3)
+            gt: (B, 8192, 3)
+    """
+    gt = gt.contiguous()
+    CD = chamfer_sqrt
+    k = 300
+    idx = query_knn(k,  gt, means, include_self = False)  # (B, N, k)
+    grouped_xyz = grouping_operation(gt.permute(0,2,1).contiguous(), idx)   # (B, 3, N, k)
+    grouped_xyz = grouped_xyz.permute(0,2,3,1)  # (B, N, k, 3)
+    means_fit, cov_mat_fit = fit_gaussian_distributions(grouped_xyz)
+    KL_loss = kl_divergence(means, cov_mat, means_fit, cov_mat_fit)
+    KL_loss_sum = torch.sum(KL_loss)
+    cd1 = CD(means, gt)
+    
+    # KL_loss_sum = torch.log(KL_loss_sum) * 1e2
+    
+    return KL_loss_sum*1e-1 + cd1*1e3, KL_loss_sum*1e-1, cd1*1e3
+
+
 
 class kp_3dgs_loss(nn.Module):
     def __init__(self):
@@ -304,7 +459,7 @@ class kp_3dgs_loss(nn.Module):
         grouped_xyz = grouping_operation(gt.permute(0,2,1).contiguous(), idx)   # (B, 3, N, k)
         grouped_xyz = grouped_xyz.permute(0,2,3,1)  # (B, N, k, 3)
         
-        sample_points_list = sample_points.unbind(dim=1) # N * (B, sample_num, 3)
+        sample_points_list = sample_points.unbind(dim=1) # N * (B, k, 3)
         gt_list = grouped_xyz.unbind(dim=1) # N * (B, k, 3)
         
         cd2_list = [CD(sample_, gt_)
@@ -313,16 +468,21 @@ class kp_3dgs_loss(nn.Module):
 
         cd2 = torch.sum(torch.stack(cd2_list))
 
+        
+        
+        B1,N1,_ = means.shape
+        # gt1 = fps_subsample(gt,N1)
         cd1 = CD(means, gt)
         
 
-        return cd1*1e3 + cd2*1e3, cd1*1e3 , cd2*1e3
+        # return cd1*1e3 + cd2*1e3, cd1*1e3 , cd2*1e3
+        return cd2*1e3 + cd1*1e3, cd1*1e3 , cd2*1e3
 
 
 class means_cd_loss(nn.Module):
     def __init__(self):
         super(means_cd_loss,self).__init__()
-        self.chamfer_dist = chamfer_3DDist()
+        # self.chamfer_dist = chamfer_3DDist()
         
     def forward(self, means, gt):
         """
@@ -330,7 +490,9 @@ class means_cd_loss(nn.Module):
             means: (B, N, 3)
             gt: (B, M, 3)
         """
-        CD = chamfer_sqrt  
+        CD = chamfer_sqrt
+        B1,N1,_ = means.shape
+        # gt1 = fps_subsample(gt,N1)
         cd = CD(means, gt)
 
         return cd*1e3
