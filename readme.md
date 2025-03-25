@@ -12,6 +12,7 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
     - [拟合直线](#拟合直线)
     - [多直线拟合](#多直线拟合)
     - [平面拟合](#平面拟合)
+  - [欧式聚类](#欧式聚类)
   - [1.3 PCA](#13-pca)
     - [normals](#normals)
     - [点云 PCA](#点云-pca)
@@ -65,11 +66,15 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
     - [Point Walk](#point-walk)
   - [Zero-shot](#zero-shot)
     - [Point Cloud Colorization:](#point-cloud-colorization)
+  - [CDPNet (AAAI 2024)](#cdpnet-aaai-2024)
+    - [Introduction:](#introduction)
 - [7. Conda](#7-conda)
   - [解决 conda 权限问题](#解决-conda-权限问题)
 - [8. 实验记录](#8-实验记录)
   - [model\_addkp](#model_addkp)
     - [v 0.5](#v-05)
+
+
 
 # 1. PCL
 
@@ -113,6 +118,36 @@ code: [denoise.cpp](src/PCL_learn/filter/denoise.cpp)
 3. Gaussian 滤波：原理与图像高斯滤波相似，点坐标为周围点坐标的高斯加权
 
 ## 1.2 RANSAC (Random sample consensus)
+RANSAC 用于从包含大量异常值（噪声或离群点）的数据中拟合数学模型。
+
+
+
+
+普通最小二乘：在现有数据下，如何实现最优。是从一个整体误差最小的角度去考虑，尽量谁也不得罪。容易受到噪点影响
+
+RANSAC：首先假设数据具有某种特性（目的），为了达到目的，适当割舍一些现有的数据。
+
+**思路：**
+1. 设定要拟合的模型，随机抽取样本点，拟合模型
+2. 找到拟合模型容忍误差范围内的点个数
+3. 重新选取样本点，重复1、2迭代
+4. 选取误差范围内点最多的一次拟合
+
+
+**RANSAC算法的期望概率（Probability）** ：算法至少找到一组纯内点样本的概率​，通常设为0.99，与迭代次数相关，值越大迭代次数越高
+PCL默认根据概率公式自动计算迭代次数，手动设置setMaxIterations会覆盖此逻辑
+
+
+
+**应用：**
+
+1. 拟合空间直线：采样点为 2，6个参数
+2. 拟合圆柱：圆柱轴上一点的坐标（x,y,z）、圆柱轴方向向量（x,y,z）、圆柱半径 r 。共7个参数
+3. 拟合平面：平面归一化法向量（x,y,z），平面位置（平面沿法向量方向到原点的有符号距离）。共4个参数
+4. 拟合球：球心和半径。共4个参数
+
+
+
 
 ### 拟合直线
 code: [line.cpp.cpp](src/PCL_learn/RANSAC/line.cpp)
@@ -151,6 +186,16 @@ code: [plane.cpp](src/PCL_learn/RANSAC/plane.cpp)
       remain_rgb -> points[k].b = 255;
 
     }
+
+## 欧式聚类
+比较适用于没有连通性的点云分割聚类
+
+**流程：**
+1. 选取空间中一点 p
+2. kd tree 最近邻搜索
+3. 距离小于阈值的点放入 Q 类中
+4. 判断 Q 中点数量是否增加，不再增加则结束，继续增加则在 Q 中选取 p 之外的点
+5. 重复 1 到 4
 
 
 ## 1.3 PCA
@@ -705,6 +750,31 @@ SFA 接收输入 (X, u)，其中 X 是 n × c 的矩阵，u 是上采样比，SF
 ### Point Cloud Colorization:
 
 通过 reference viewpoint estimation 获得相机位姿 Vp，Pin 初始化 3DGS 得到 Gin，Gin的中心是固定的，以保持Pin的形状。
+
+## CDPNet (AAAI 2024)
+点云补全跨模态双相位网络
+
+形状的全局信息是从额外的单视图图像中获得的，部分点云提供几何信息
+
+### Introduction:
+**Challenge:**
+
+如何利用多模态特征来完成形状补全  如何生成形状的细节。
+
+**Pipeline:**
+
+Phase1: Image -> coarse point clouds   segment the coarse point clouds into patches and generate dense point clouds
+
+Phase2: 通过DGCNN从partial点云中提取细粒度的几何信息   粗局部几何信息与细粒度几何信息结合，发送到多补丁生成器，获得的稠密点云和partial相加再FPS(MSN (Liu et al. 2020))
+
+**contributions:**
+
+1. 利用图像学习全局信息，利用patches保留局部几何细节
+2. design a new patch generator  接收粗糙的patch特征和细粒度的几何信息来生成细粒度patch
+3. CDPNet
+
+
+
 
 # 7. Conda
 ## 解决 conda 权限问题
