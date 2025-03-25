@@ -13,9 +13,11 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
     - [多直线拟合](#多直线拟合)
     - [平面拟合](#平面拟合)
   - [欧式聚类](#欧式聚类)
-  - [1.3 PCA](#13-pca)
-    - [normals](#normals)
-    - [点云 PCA](#点云-pca)
+  - [区域生长分割](#区域生长分割)
+  - [1.5 特征点与特征描述](#15-特征点与特征描述)
+    - [1.5.1 pcl::Feature](#151-pclfeature)
+    - [1.5.2 点云 PCA](#152-点云-pca)
+    - [1.5.3 求点云曲率](#153-求点云曲率)
 - [2. Lidar 运动补偿](#2-lidar-运动补偿)
   - [点云预处理](#点云预处理)
   - [使用 IMU 进行补偿](#使用-imu-进行补偿)
@@ -190,6 +192,16 @@ code: [plane.cpp](src/PCL_learn/RANSAC/plane.cpp)
 ## 欧式聚类
 比较适用于没有连通性的点云分割聚类
 
+优点：
+1. 无需计算法线或颜色属性，适合实时处理
+2. 准确分割空间中明显分离的物体
+3. 不受颜色或材质差异影响，仅依赖几何分布
+  
+缺点：
+1. 如紧挨着的物体会被合并
+2. 距离阈值需根据场景调整
+
+
 **流程：**
 1. 选取空间中一点 p
 2. kd tree 最近邻搜索
@@ -198,7 +210,21 @@ code: [plane.cpp](src/PCL_learn/RANSAC/plane.cpp)
 5. 重复 1 到 4
 
 
-## 1.3 PCA
+## 区域生长分割
+优点：
+1. 适合分割具有相同表面的区域，如连续平面
+
+缺点：
+1. 需计算法线、曲率等属性
+2. 法线夹角阈值、曲率阈值等需精细调优
+   
+**流程：**
+1. 选取曲率最小的点（如平面区域）作为初始种子
+2. 计算近邻点与种子点的法线夹角。夹角 < 阈值，进入下一步；夹角 > 阈值，重新找近邻点
+3. 计算点云曲率。曲率 < 阈值，加入种子点的点集合；曲率 > 阈值，重新找近邻点
+
+
+<!-- ## 1.3 PCA
 ### normals
 code: [normals.cpp](src/PCL_learn/pca/normals.cpp)
 
@@ -220,7 +246,81 @@ code: [normals.cpp](src/PCL_learn/pca/normals.cpp)
 ### 点云 PCA
 code: [pca.cpp](src/PCL_learn/pca/pca.cpp)
 
-求点云主成分，特征值最小的对应的向量是法向量，这里是纯 eigen 算，也可以调用 pcl 求
+求点云主成分，特征值最小的对应的向量是法向量，这里是纯 eigen 算，也可以调用 pcl 求 -->
+
+
+## 1.5 特征点与特征描述
+
+### 1.5.1 pcl::Feature
+1. setIndices() = false, setSearchSurfase() = false
+   
+   仅在 input cloud 中搜索最近邻，最常见的情况
+2. setIndices() = true, setSearchSurfase() = false
+
+   有索引，仅计算索引点云的特征，knn时可以使用索引以外的点
+3. setIndices() = false, setSearchSurfase() = true
+
+   无索引，有指定搜索面，计算所有输入点云的特征，但是寻找最近邻只能在 SearchSurfase 点云中寻找
+
+   在点云非常密集的情况下，输入点云为下采样点云，SearchSurfase 为原始点云，这样计算特征效率高
+4. setIndices() = true, setSearchSurfase() = true
+
+   这种情况比较少见，计算 input 的 Indices 点特征，knn 从 SearchSurfase 找
+
+
+### 1.5.2 点云 PCA
+
+**PCL 求法向量**
+
+code: [normals.cpp](src/PCL_learn/pca/normals.cpp)
+
+求点云法向量，遍历点，对于某个点，找这个点的最近邻十个点，将这十个点放入 pca 中得到一个 eigen_vectors，最后一列（最小特征值对应的）为法向量
+
+或使用 pcl::NormalEstimation\<pcl::PointXYZ, pcl::Normal\> 
+
+    method1:
+    pcl::PCA<pcl::PointXYZRGB> pca;
+    pca.setInputCloud(cloud_);
+    Eigen::Matrix3f eigen_vectors = pca.getEigenVectors();
+
+    method2:
+    pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal>
+
+**eigen 求点云法向量**
+
+code: [pca.cpp](src/PCL_learn/pca/pca.cpp)
+
+求点云主成分，特征值最小的对应的向量是法向量，这里是纯 eigen 算，也可以调用 pcl 求，但是需要法向量定向过程
+
+
+### 1.5.3 求点云曲率
+**主曲率：**
+1. ​第一主曲率（κ1​）​：最大曲率值，沿曲率最大的方向。
+2. ​第一主曲率（κ2）​：最小曲率值，沿曲率最小的方向。
+   
+**高斯曲率：**
+
+K = κ1κ2
+
+**平均曲率：**
+
+H = (κ1 + κ2)/2
+
+**表面曲率：**
+
+表面曲率是点云数据表面的特征值来描述点云表面变化程度的一个概念，与数学意义上的曲率不同。
+
+在计算法向量的时候，计算均值与协方差矩阵，再计算协方差矩阵的三个特征值（λ1 λ2 λ3）和特征向量
+
+δ = λ1/(λ1 + λ2 + λ3) λ1最小
+
+δ 越小周围越平坦，越大周围起伏越大
+
+
+**PCL计算曲率的两个方法：**
+1. pcl::PrincipalCurvaturesEstimation 输出 κ1 κ2
+2. pcl::NormalEstimation 输出 κ2
+
 
 
 
