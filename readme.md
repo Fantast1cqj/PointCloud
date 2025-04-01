@@ -12,12 +12,21 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
     - [拟合直线](#拟合直线)
     - [多直线拟合](#多直线拟合)
     - [平面拟合](#平面拟合)
-  - [欧式聚类](#欧式聚类)
-  - [区域生长分割](#区域生长分割)
+  - [点云配准](#点云配准)
+    - [4PCS(4-Point Congruent Sets) 点云粗配准](#4pcs4-point-congruent-sets-点云粗配准)
+    - [K4PCS(4-Point Congruent Sets) 点云粗配准](#k4pcs4-point-congruent-sets-点云粗配准)
+    - [RANSAC 点云粗配准](#ransac-点云粗配准)
+  - [点云分割](#点云分割)
+    - [欧式聚类分割](#欧式聚类分割)
+    - [区域生长分割](#区域生长分割)
   - [1.5 特征点与特征描述](#15-特征点与特征描述)
     - [1.5.1 pcl::Feature](#151-pclfeature)
     - [1.5.2 点云 PCA](#152-点云-pca)
     - [1.5.3 求点云曲率](#153-求点云曲率)
+    - [1.5.4 MLS 平滑点云并计算法向量](#154-mls-平滑点云并计算法向量)
+    - [1.5.5 计算点云包围盒](#155-计算点云包围盒)
+    - [1.5.6 点云边界提取](#156-点云边界提取)
+    - [1.5.7  Alpha Shapes 平面点云边界特征提取](#157--alpha-shapes-平面点云边界特征提取)
 - [2. Lidar 运动补偿](#2-lidar-运动补偿)
   - [点云预处理](#点云预处理)
   - [使用 IMU 进行补偿](#使用-imu-进行补偿)
@@ -189,7 +198,80 @@ code: [plane.cpp](src/PCL_learn/RANSAC/plane.cpp)
 
     }
 
-## 欧式聚类
+## 点云配准
+
+两个点云 source 和 target，找到一个变换将 source 变换尽量与 target 对齐
+
+**仿射变换：** 线性变换（旋转、缩放、剪切） + 平移，​保持直线和平行线​，允许形状和大小改变​（如缩放、拉伸、倾斜）
+
+**刚体变换：** 仿射变换的子集，仅包含旋转 + 平移，保持物体形状和大小​（所有点之间的欧氏距离不变），不包含缩放或剪切
+
+### 4PCS(4-Point Congruent Sets) 点云粗配准
+**核心原理：**
+
+（1）刚体变换不变性：四点构成的平面四边形中，边长比例和对角线比例在旋转和平移下保持不变
+
+（2）​仿射不变性：四点集的交比（Cross Ratio）在仿射变换下不变，而刚体变换是仿射变换的特例。
+
+**流程：**
+
+(1) source 中选择四点基元，要求四点共面且两对边非平行
+
+(2) 计算基元的仿射不变量，
+
+(3) 在 target 中依据仿射不变量，且在误差范围内，找到与基础广域基近似全等的一致性四点集
+
+(4) 通过基元与 target 中四点集计算刚性变换 T，根据重叠比例测试获得最佳变换 T
+
+    pcl::console::TicToc time;
+    pcl::registration::FPCSInitialAlignment<pcl::PointXYZ, pcl::PointXYZ> fpcs;
+    fpcs.setInputSource(source);
+    fpcs.setInputTarget(target);
+    fpcs.setApproxOverlap(0.7);         // 设置近似重叠率
+    fpcs.setDelta(0.01);                // 精度参数
+    fpcs.setNumberOfSamples(100);       // 采样点数量
+    pcl::PointCloud<pcl::PointXYZ>::Ptr aligned(new pcl::PointCloud<pcl::PointXYZ>);
+    fpcs.align(*aligned);               // 执行配准
+    Eigen::Matrix4f final_transform = fpcs.getFinalTransformation(); // 获取变换矩阵
+    // 输出变换矩阵
+    std::cout << "变换矩阵：\n" << final_transform << std::endl;
+
+
+### K4PCS(4-Point Congruent Sets) 点云粗配准
+
+(1) 先利用 voxel grid 下采样，再进行关键点检测  (3D Harris,3D DoG)
+
+(2) 通过 4PCS 使用关键点进行匹配，降低搜索规模，提高运算效率
+
+
+	// --------------------------K4PCS算法进行配准------------------------------
+	pcl::registration::KFPCSInitialAlignment<pcl::PointXYZ, pcl::PointXYZ> kfpcs;
+	kfpcs.setInputSource(source);  // 源点云
+	kfpcs.setInputTarget(target);  // 目标点云
+	kfpcs.setApproxOverlap(0.7);   // 源和目标之间的近似重叠。
+	kfpcs.setLambda(0.5);          // 平移矩阵的加权系数。(暂时不知道是干什么用的)
+	kfpcs.setDelta(0.002, false);  // 配准后源点云和目标点云之间的距离
+	kfpcs.setNumberOfThreads(6);   // OpenMP多线程加速的线程数
+	kfpcs.setNumberOfSamples(200); // 配准时要使用的随机采样点数量
+	// kfpcs.setMaxComputationTime(1000);//最大计算时间(以秒为单位)。
+	pcl::PointCloud<pcl::PointXYZ>::Ptr kpcs(new pcl::PointCloud<pcl::PointXYZ>);
+	kfpcs.align(*kpcs);
+
+	cout << "KFPCS配准用时： " << time.toc() << " ms" << endl;
+	cout << "变换矩阵：\n" << kfpcs.getFinalTransformation() << endl;
+	// 使用创建的变换对为输入的源点云进行变换
+	pcl::transformPointCloud(*source, *kpcs, kfpcs.getFinalTransformation());
+	// 保存转换后的源点云作为最终的变换输出
+	pcl::io::savePCDFileBinary("transformed.pcd", *kpcs);
+	
+
+### RANSAC 点云粗配准
+通过随机采样和迭代验证，找到最优的刚体变换参数
+
+
+
+## 点云分割
+### 欧式聚类分割
 比较适用于没有连通性的点云分割聚类
 
 优点：
@@ -210,7 +292,7 @@ code: [plane.cpp](src/PCL_learn/RANSAC/plane.cpp)
 5. 重复 1 到 4
 
 
-## 区域生长分割
+### 区域生长分割
 优点：
 1. 适合分割具有相同表面的区域，如连续平面
 
@@ -281,8 +363,7 @@ code: [normals.cpp](src/PCL_learn/pca/normals.cpp)
     method1:
     pcl::PCA<pcl::PointXYZRGB> pca;
     pca.setInputCloud(cloud_);
-    Eigen::Matrix3f eigen_vectors = pca.getEigenVectors();
-
+    Eigen::Matrix3f eigen_vectors = pca.getEigenVectors();    
     method2:
     pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal>
 
@@ -320,6 +401,151 @@ H = (κ1 + κ2)/2
 **PCL计算曲率的两个方法：**
 1. pcl::PrincipalCurvaturesEstimation 输出 κ1 κ2
 2. pcl::NormalEstimation 输出 κ2
+
+
+
+### 1.5.4 MLS 平滑点云并计算法向量
+MLS（移动最小二乘法） 可以用于平滑点云，并计算法向量，可以只用来计算法向量
+
+在 MLS 第一步计算的超平面法向量作为采样点的法向量，此方法精度相对于 PCA 求法向量精度更高但是更消耗资源
+
+
+    pcl::MovingLeastSquares<pcl::PointXYZ, pcl::PointNormal> mls;
+    mls.setInputCloud(cloud);
+    mls.setComputeNormals(true);     // 是否计算法线，设置为ture则计算法线
+    mls.setPolynomialOrder(2);       // 设置MLS拟合的阶数，默认是2
+    mls.setSearchMethod(tree);       // 邻域点搜索的方式
+    mls.setSearchRadius(0.005);      // 邻域搜索半径
+    mls.setNumberOfThreads(4);       // 设置多线程加速的线程数
+    mls.process(*mls_points_normal); // 曲面重建
+
+
+### 1.5.5 计算点云包围盒
+**(1) AABB 包围盒**
+
+原理：
+直接取点云 xyz 中最小值和最大值
+
+特点：
+包围盒XYZ轴都与坐标轴对齐
+
+适用场景：
+快速碰撞检测、空间索引
+
+      pcl::PointXYZ minPt, maxPt;
+      pcl::getMinMax3D(*cloud, minPt, maxPt);
+      viewer->addCube(minPt.x, maxPt.x, minPt.y, maxPt.y, minPt.z, maxPt.z, 1.0, 0.0, 0.0, "AABB");
+
+**(2) 惯性矩获得 AABB**
+
+特点：
+包围盒XYZ轴都与坐标轴对齐
+
+      pcl::MomentOfInertiaEstimation<pcl::PointXYZ>mie;
+      mie.setInputCloud(cloud);
+      mie.compute();
+      pcl::PointXYZ minPt, maxPt;
+      mie.getAABB(minPt, maxPt); 
+
+**（3）OBB 有向包围盒**
+
+原理：PCA 获得主方向，在主方向坐标系中计算xyz最大值与最小值，得到包围盒
+
+特点：
+包围盒XYZ轴都紧贴物体
+
+适用场景：
+精确碰撞检测、物体姿态估计
+
+      pcl::MomentOfInertiaEstimation<pcl::PointXYZ> mie;
+      mie.setInputCloud(cloud);
+      mie.compute();
+      float maxValue, midValue, minValue;                // 三个特征值
+      Eigen::Vector3f maxVec, midVec, minVec;            // 特征值对应的特征向量
+      Eigen::Vector3f centroid;                          // 点云质心
+      pcl::PointXYZ minPtObb, maxPtObb, posObb;          // OBB包围盒最小值、最大值以及位姿
+      Eigen::Matrix3f rMatObb;                           // OBB包围盒对应的旋转矩阵
+      mie.getOBB(minPtObb, maxPtObb, posObb, rMatObb);   // 获取OBB对应的相关参数
+      mie.getEigenValues(maxValue, midValue, minValue);  // 获取特征值
+      mie.getEigenVectors(maxVec, midVec, minVec);       // 获取特征向量
+      mie.getMassCenter(centroid);                       // 获取点云中心坐标
+
+
+**（4）PCA 构建包围盒**
+
+获取质心（均值）和协方差矩阵，对协方差矩阵进行分解获得坐标系2，获得R12（坐标系1到坐标系2的旋转）
+
+质心的坐标为 t12
+
+已知1坐标系的点 P1 求2坐标系下点坐标
+
+p1 = R12*p2 + t12
+
+(R12)^-1(p1-t12) = p2
+
+
+
+
+### 1.5.6 点云边界提取
+
+选取一点P，knn找最近邻点，求该点法向量，找到切平面，将其knn点集投影到切平面，计算P到其他点的向量
+夹角，当夹角阈值大于 pi/2 则 P 为边界点
+
+<img src="note_pic/19.png"  width="500" />
+
+
+
+	
+    // ----------------------------边界特征估计------------------------------
+    pcl::BoundaryEstimation<pcl::PointXYZ, pcl::Normal, pcl::Boundary> boundEst;
+    boundEst.setInputCloud(cloud);
+    boundEst.setInputNormals(normals);
+    boundEst.setRadiusSearch(0.02);
+    boundEst.setAngleThreshold(M_PI / 2); // 边界判断时的角度阈值
+    boundEst.setSearchMethod(tree);
+    pcl::PointCloud<pcl::Boundary> boundaries;
+    boundEst.compute(boundaries);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_boundary(new pcl::PointCloud<pcl::PointXYZ>);
+    for (int i = 0; i < cloud->points.size(); i++)
+    {
+      if (boundaries[i].boundary_point > 0)
+      {
+        cloud_boundary->push_back(cloud->points[i]);
+      }
+    }
+    cout << "边界点个数:" << cloud_boundary->points.size() << endl;
+
+
+### 1.5.7  Alpha Shapes 平面点云边界特征提取
+
+**原理：**
+任意形状的平面点云，一个半径为 α 的圆进行滚动，α 合适时圆只在边界滚动，滚动轨迹为点云边界
+
+**算法流程：**
+1. 对于任意一点 P，滚动半径 α，在点云内寻找 2α 以内的点组成集合 Q 
+2. Q 中任意取一点 P1，计算 α 为半径，经过 P 和 P1 的两个圆的圆心 P2 P3
+3. Q中去除 P1，在 Q 中寻找其他点，若其他点到 P2 和 P3 的距离均大于 α 则 P 为一个边界点
+4. 若其他点到 P2 和 P3 距离不都大于 α，则 Q 中点轮换作为 P1。若某一点满足(2)(3)的条件，则该点为边界点，终止判断，若不存在这样的 P1 则 P 点为平面点
+
+<img src="note_pic/20.jpg"  width="300" />
+
+
+
+    // -------------------------a-shape平面点云边界提取-----------------------------
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloudHul(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::ConcaveHull<pcl::PointXYZ> chull; // a-shape
+    chull.setInputCloud(cloud);            // 输入点云为投影后的点云
+    chull.setAlpha(0.1);                   // 设置alpha值为0.1
+    chull.reconstruct(*cloudHul);
+    cout << "提取边界点个数为: " << cloudHul->points.size() << endl;
+    cout << "提取边界点用时： " << time.toc() / 1000 << " 秒" << endl;
+    pcl::PCDWriter writer;
+    writer.write("hull.pcd", *cloudHul, false);
+
+
+
+
+
 
 
 
