@@ -16,6 +16,8 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
     - [4PCS(4-Point Congruent Sets) 点云粗配准](#4pcs4-point-congruent-sets-点云粗配准)
     - [K4PCS(4-Point Congruent Sets) 点云粗配准](#k4pcs4-point-congruent-sets-点云粗配准)
     - [RANSAC 点云粗配准](#ransac-点云粗配准)
+    - [点到点 ICP 点云精配准](#点到点-icp-点云精配准)
+    - [kdtree 优化 ICP](#kdtree-优化-icp)
   - [点云分割](#点云分割)
     - [欧式聚类分割](#欧式聚类分割)
     - [区域生长分割](#区域生长分割)
@@ -198,9 +200,18 @@ code: [plane.cpp](src/PCL_learn/RANSAC/plane.cpp)
 
     }
 
+
+
+
+
+
 ## 点云配准
 
 两个点云 source 和 target，找到一个变换将 source 变换尽量与 target 对齐
+
+与（4）PCA 构建包围盒 那节的区别：构建包围盒那节是将**激光雷达坐标系1**下的点云转换到**点云重心坐标系2**下，并且是知道坐标系之间的关系，其关系是R12为主成分列向量矩阵的转置，t12为点云重心点在激光雷达坐标系1的坐标。
+
+点云配准不知道两个坐标系之间的关系，想知道点云到点云的转换，求得点云转换矩阵后，坐标系的变换矩阵也知道了
 
 **仿射变换：** 线性变换（旋转、缩放、剪切） + 平移，​保持直线和平行线​，允许形状和大小改变​（如缩放、拉伸、倾斜）
 
@@ -236,6 +247,19 @@ code: [plane.cpp](src/PCL_learn/RANSAC/plane.cpp)
     // 输出变换矩阵
     std::cout << "变换矩阵：\n" << final_transform << std::endl;
 
+**优点：**
+无需初始位姿，直接从任意位置开始配准；对部分重叠（30%-70%）点云有效；多次采样不同基元，统计最优解，受噪声影响小
+
+**缺点：**
+要求四点基元共面，非平面结构配准困难；需遍历大量四点组合，时间复杂度高；交比容差和重叠率需精细调整；
+
+**适用场景：**
+​多视角碎片化数据​（如文物扫描、建筑BIM）；低重叠率点云粗对齐​（需后续ICP精配准）；
+
+
+
+
+
 
 ### K4PCS(4-Point Congruent Sets) 点云粗配准
 
@@ -265,8 +289,161 @@ code: [plane.cpp](src/PCL_learn/RANSAC/plane.cpp)
 	pcl::io::savePCDFileBinary("transformed.pcd", *kpcs);
 	
 
+
+
+
+
 ### RANSAC 点云粗配准
-通过随机采样和迭代验证，找到最优的刚体变换参数
+原理：通过随机采样和迭代验证，找到最优的刚体变换参数
+
+**算法流程：**
+（1）通过 FPFH 特征描述子提取关键点及其特征向量，对特征进行最近邻匹配，获得匹配点集M={(pi,qi)}
+
+（2）使用匹配点集估计变换 T
+
+（3）将估计变换应用于点云 P，与点云 Q 通过最近邻搜索寻找内点，内点太少则返回（1）
+
+（4）内点对应关系重新估计 T，计算内点对应点之间的距离，达到最小距离则当前估计作为最终转换
+
+pcl::SampleConsensusPrerejective 需要提前计算描述
+
+    // RANSAC配准
+    pointcloud::Ptr ransac_registration(pointcloud::Ptr source, pointcloud::Ptr target, fpfhFeature::Ptr source_fpfh, fpfhFeature::Ptr target_fpfh)
+    {
+        pcl::SampleConsensusPrerejective<PointT, PointT, pcl::FPFHSignature33> r_sac;
+        r_sac.setInputSource(source);            // 设置源点云
+        r_sac.setInputTarget(target);            // 设置目标点云
+        r_sac.setSourceFeatures(source_fpfh);    // 设置源点云的FPFH特征
+        r_sac.setTargetFeatures(target_fpfh);    // 设置目标点云的FPFH特征
+        r_sac.setCorrespondenceRandomness(5);    // 随机特征对应时使用的邻居数量
+        r_sac.setInlierFraction(0.5f);           // 设置所需的内点比例
+        r_sac.setNumberOfSamples(3);             // 设置采样点的数量
+        r_sac.setSimilarityThreshold(0.1f);      // 设置边缘长度相似度阈值
+        r_sac.setMaxCorrespondenceDistance(1.0f);// 设置最大对应点距离
+        r_sac.setMaximumIterations(100);         // 设置最大迭代次数
+
+        pointcloud::Ptr aligned(new pointcloud); // 配准后的点云
+        r_sac.align(*aligned);                   // 执行配准
+
+        pcl::transformPointCloud(*source, *aligned, r_sac.getFinalTransformation()); // 对源点云进行变换
+        cout << "变换矩阵：\n" << r_sac.getFinalTransformation() << endl;            // 输出变换矩阵
+
+        return aligned;
+    }
+
+pcl::registration::RANSAC 内部计算描述特征
+
+    #include <pcl/registration/ransac.h>
+    #include <pcl/features/normal_3d_omp.h>
+
+    pcl::registration::RANSAC<pcl::PointXYZ, pcl::PointXYZ> ransac;
+    ransac.setInputSource(source_cloud);
+    ransac.setInputTarget(target_cloud);
+    ransac.setInlierThreshold(0.05);   // 内点残差阈值
+    ransac.setMaxIterations(1000);     // 最大迭代次数
+    ransac.align(*aligned_cloud);
+
+**优点：**
+抗离群点能力强（统计内点筛选最优变换T）；无需初始位姿：直接从随机采样开始，全局搜索最优解；
+
+**缺点：**
+高离群点比例时需极多迭代次数；需高质量特征描述子（如FPFH）生成候选点对；通常作为粗配准；
+
+**应用场景：**
+高噪声数据配准
+
+
+
+
+
+
+### 点到点 ICP 点云精配准
+
+**原理：**给定 source 点云 P 和 target 点云 Q，寻找刚体变换 T 使得误差距离最小
+
+**算法流程：**
+
+（1）设初始的位姿估计为 R0, t0
+
+（2）从初始位姿估计开始迭代。设第 k 次迭代时位姿估计为 Rk, tk
+
+（3）在 Rk, tk 估计下，按照最近邻方式寻找匹配点。记匹配之后的点对为 (pi, qi)
+
+（4）计算迭代结果判断是否收敛，不收敛返回（3），收敛退出
+
+$$
+\underset{R, t}{\operatorname{argmin}} \sum_{i=1}^n\left\|\left(R p_i+t\right)-q_i\right\|^2
+$$
+
+可通过 SVD 求解最小二乘或高斯牛顿法优化求解
+
+
+	//--------------------初始化ICP对象--------------------
+	pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+	//----------------------icp核心代码--------------------
+	icp.setInputSource(source);            // 源点云
+	icp.setInputTarget(target);            // 目标点云
+	icp.setTransformationEpsilon(1e-10);   // 为终止条件设置最小转换差异
+	icp.setMaxCorrespondenceDistance(1);  // 设置对应点对之间的最大距离（此值对配准结果影响较大）。
+	icp.setEuclideanFitnessEpsilon(0.001);  // 设置收敛条件是均方误差和小于阈值， 停止迭代；
+	icp.setMaximumIterations(35);           // 最大迭代次数
+	icp.setUseReciprocalCorrespondences(true);//设置为true,则使用相互对应关系
+	// 计算需要的刚体变换以便将输入的源点云匹配到目标点云
+	pcl::PointCloud<pcl::PointXYZ>::Ptr icp_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+	icp.align(*icp_cloud);
+	cout << "Applied " << 35 << " ICP iterations in " << time.toc() << " ms" << endl;
+	cout << "\nICP has converged, score is " << icp.getFitnessScore() << endl;
+	cout << "变换矩阵：\n" << icp.getFinalTransformation() << endl;
+	// 使用创建的变换对为输入源点云进行变换
+	pcl::transformPointCloud(*source, *icp_cloud, icp.getFinalTransformation());
+	//pcl::io::savePCDFileASCII ("666.pcd", *icp_cloud);
+
+**优点：**
+精度高；KD-Tree加速后适用于中等规模点云；
+
+**缺点：**
+需粗配准（如4PCS或RANSAC）提供初始变换；易陷入局部最优；对低重叠率（<30%）点云失效；噪声敏感需预处理
+
+**适用场景：**
+相邻帧点云配准；​扫描数据对齐
+
+
+
+
+
+
+
+### kdtree 优化 ICP
+
+	//--------------------初始化ICP对象--------------------
+	pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+
+	//---------------------KD树加速搜索--------------------
+	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree1(new pcl::search::KdTree<pcl::PointXYZ>);
+	tree1->setInputCloud(source);
+	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree2(new pcl::search::KdTree<pcl::PointXYZ>);
+	tree2->setInputCloud(target);
+	icp.setSearchMethodSource(tree1);
+	icp.setSearchMethodTarget(tree2);
+	//----------------------icp核心代码--------------------
+	icp.setInputSource(source);            // 源点云
+	icp.setInputTarget(target);            // 目标点云
+	icp.setTransformationEpsilon(1e-10);   // 为终止条件设置最小转换差异
+	icp.setMaxCorrespondenceDistance(1);  // 设置对应点对之间的最大距离（此值对配准结果影响较大）。
+	icp.setEuclideanFitnessEpsilon(0.05);  // 设置收敛条件是均方误差和小于阈值， 停止迭代；
+	icp.setMaximumIterations(35);           // 最大迭代次数
+	//icp.setUseReciprocalCorrespondences(true);//使用相互对应关系
+	// 计算需要的刚体变换以便将输入的源点云匹配到目标点云
+	pcl::PointCloud<pcl::PointXYZ>::Ptr icp_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+	icp.align(*icp_cloud);
+	cout << "Applied " << 35 << " ICP iterations in " << time.toc() << " ms" << endl;
+	cout << "\nICP has converged, score is " << icp.getFitnessScore() << endl;
+	cout << "变换矩阵：\n" << icp.getFinalTransformation() << endl;
+	// 使用创建的变换对为输入源点云进行变换
+	pcl::transformPointCloud(*source, *icp_cloud, icp.getFinalTransformation());
+	//pcl::io::savePCDFileASCII ("666.pcd", *icp_cloud);
+
+
 
 
 
