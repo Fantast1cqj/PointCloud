@@ -58,6 +58,7 @@ Markdown 教程：https://markdown.com.cn/basic-syntax/
 - [5. 点云语义分割](#5-点云语义分割)
   - [5.1 Point Net](#51-point-net)
   - [5.2 Point Net++](#52-point-net)
+  - [5.3 RangeNet++](#53-rangenet)
 - [6. 点云补全](#6-点云补全)
   - [partial to complete](#partial-to-complete)
   - [配 EditVAE 环境](#配-editvae-环境)
@@ -1053,6 +1054,17 @@ grouping: KNN, Ball query
 <img src="note_pic/15.png"  width="500" />
 
 在分割任务中，需要恢复点的数量，找要恢复的点最近的三个上层点，使用距离的倒数作为权重进行插值，再将原来的特征拼接再后面
+
+## 5.3 RangeNet++
+其核心思想是将 ​​3D 点云投影为 2D 距离图像（Range Image），利用 2D 卷积网络进行特征提取，再通过后处理优化分割结果
+
+算法流程：
+
+1. 点云转换深度图，(x,y,z)转换为极坐标再进行投影，转换为 (u,v)
+2. 2D语义分割
+3. 从2D到3D的语义转移，从原始点云中恢复所有点
+4. 解决投影离散化导致同一像素内多个点的标签冲突
+
 
 # 6. 点云补全
 ## partial to complete
